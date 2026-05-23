@@ -1,0 +1,9 @@
+{
+  "name": "guideon",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "express": "^4.18.0",
+    "pdf-parse": "^1.1.1"
+  }
+}
