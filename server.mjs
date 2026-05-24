@@ -1,34 +1,61 @@
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { createClient } from '@supabase/supabase-js';
+
 const app = express();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const API_KEY = process.env.GROQ_API_KEY;
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_KEY;
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const SYSTEM = { role: "system", content: "Tu es Guideon, un assistant IA cree par Brother Victor Bossou." };
+
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
-const SYSTEM = { role: "system", content: "Tu es Guideon, un assistant sage et philosophique cree par Brother Victor Bossou. Tu reponds dans la langue de l utilisateur. Si quelquun te demande qui ta cree, reponds : Je suis Guideon, cree par Brother Victor Bossou." };
+
 app.post('/api/chat', async (req, res) => {
   try {
-    const { message, history } = req.body;
-    const messages = [SYSTEM, ...history, { role: "user", content: message }];
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + API_KEY }, body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages }) });
+    const { message, user_id = 'default' } = req.body;
+    const { data: history } = await supabase
+      .from('conversations')
+      .select('role, content')
+      .eq('user_id', user_id)
+      .order('created_at', { ascending: true })
+      .limit(20);
+    const messages = [SYSTEM, ...(history || []), { role: 'user', content: message }];
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages })
+    });
     const data = await response.json();
-    if (!data.choices) return res.status(500).json({ error: data });
-    res.json({ reply: data.choices[0].message.content });
+    if (!data.choices) return res.status(500).json({ error: "Erreur API" });
+    const reply = data.choices[0].message.content;
+    await supabase.from('conversations').insert([
+      { user_id, role: 'user', content: message },
+      { user_id, role: 'assistant', content: reply }
+    ]);
+    res.json({ reply });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
+
 app.post('/api/image', async (req, res) => {
   try {
     const { prompt } = req.body;
-    res.json({ url: "https://image.pollinations.ai/prompt/" + encodeURIComponent(prompt) + "?width=512&height=512&nologo=true" });
+    res.json({ url: `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}` });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
+
 app.post('/api/search', async (req, res) => {
   try {
     const { query } = req.body;
-    const r = await fetch("https://api.duckduckgo.com/?q=" + encodeURIComponent(query) + "&format=json&no_html=1");
+    const r = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json`);
     const d = await r.json();
-    res.json({ result: d.AbstractText || d.Answer || null });
+    res.json({ result: d.AbstractText || d.Answer || "Aucun résultat." });
   } catch(e) { res.json({ result: null }); }
 });
-app.listen(3000, () => console.log("Guideon Web tourne sur http://localhost:3000"));
+
+app.listen(3000, () => console.log("Guideon Web actif sur le port 3000"));
