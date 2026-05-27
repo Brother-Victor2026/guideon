@@ -1,106 +1,77 @@
-import express from "express";
-import Groq from "groq-sdk";
-import pg from "pg";
-import path from "path";
-import { fileURLToPath } from "url";
+import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const API_KEY = process.env.GROQ_API_KEY;
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_KEY;
 
-const pool = new pg.Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
-});
+const DB = `${SUPABASE_URL}/rest/v1`;
+const HEADERS = {
+  'apikey': SUPABASE_KEY,
+  'Authorization': `Bearer ${SUPABASE_KEY}`,
+  'Content-Type': 'application/json'
+};
 
-async function initDB() {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS conversations (
-      id SERIAL PRIMARY KEY,
-      user_id TEXT NOT NULL,
-      role TEXT NOT NULL,
-      content TEXT NOT NULL,
-      created_at TIMESTAMPTZ DEFAULT NOW()
-    );
-    CREATE INDEX IF NOT EXISTS idx_user_id ON conversations(user_id);
-  `);
-  console.log("Base de données prête.");
-}
-
-async function getHistory(userId) {
-  const { rows } = await pool.query(
-    `SELECT role, content FROM conversations WHERE user_id = $1 ORDER BY created_at DESC LIMIT 40`,
-    [userId]
-  );
-  return rows.reverse();
-}
-
-async function saveMessage(userId, role, content) {
-  await pool.query(
-    `INSERT INTO conversations (user_id, role, content) VALUES ($1, $2, $3)`,
-    [userId, role, content]
-  );
-}
+const SYSTEM = { role: "system", content: "Tu es Guideon, assistant IA cree par Brother Victor Bossou. Tu te souviens de toutes les conversations precedentes avec l utilisateur." };
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(path.join(__dirname, 'public')));
 
-app.post("/chat", async (req, res) => {
-  const { message, userId } = req.body;
-  if (!message || !userId) return res.status(400).json({ error: "message et userId requis." });
+app.post('/api/chat', async (req, res) => {
   try {
-    const history = await getHistory(userId);
-    await saveMessage(userId, "user", message);
-    const messages = [
-      { role: "system", content: "Tu es Guidéon, un assistant IA créé par Brother Victor Bossou. Tu es intelligent et bienveillant. Tu te souviens de toutes les conversations passées." },
-      ...history,
-      { role: "user", content: message },
-    ];
-    res.setHeader("Content-Type", "text/event-stream");
-    res.setHeader("Cache-Control", "no-cache");
-    res.setHeader("Connection", "keep-alive");
-    const stream = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
-      messages,
-      stream: true,
-      max_tokens: 1024,
+    const { message, user_id = 'default' } = req.body;
+    let history = [];
+    try {
+      const r = await fetch(`${DB}/conversations?user_id=eq.${user_id}&order=created_at.asc&limit=30`, { headers: HEADERS });
+      history = await r.json();
+      if (!Array.isArray(history)) history = [];
+      console.log('Historique charge:', history.length);
+    } catch(e) { console.log('Erreur lecture:', e.message); }
+
+    const messages = [SYSTEM, ...history.map(h => ({ role: h.role, content: h.content })), { role: 'user', content: message }];
+
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages })
     });
-    let fullResponse = "";
-    for await (const chunk of stream) {
-      const token = chunk.choices[0]?.delta?.content || "";
-      if (token) {
-        fullResponse += token;
-        res.write(`data: ${JSON.stringify({ token })}\n\n`);
-      }
-    }
-    await saveMessage(userId, "assistant", fullResponse);
-    res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
-    res.end();
-  } catch (err) {
-    console.error("Erreur:", err);
-    res.status(500).json({ error: "Erreur serveur." });
-  }
+    const data = await response.json();
+    if (!data.choices) return res.status(500).json({ error: "Erreur API" });
+    const reply = data.choices[0].message.content;
+
+    try {
+      await fetch(`${DB}/conversations`, {
+        method: 'POST',
+        headers: { ...HEADERS, 'Prefer': 'return=minimal' },
+        body: JSON.stringify([
+          { user_id, role: 'user', content: message },
+          { user_id, role: 'assistant', content: reply }
+        ])
+      });
+      console.log('Sauvegarde OK !');
+    } catch(e) { console.log('Erreur save:', e.message); }
+
+    res.json({ reply });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get("/history/:userId", async (req, res) => {
+app.post('/api/image', async (req, res) => {
   try {
-    const history = await getHistory(req.params.userId);
-    res.json(history);
-  } catch (err) {
-    res.status(500).json({ error: "Erreur." });
-  }
+    const { prompt } = req.body;
+    res.json({ url: `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}` });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.delete("/history/:userId", async (req, res) => {
+app.post('/api/search', async (req, res) => {
   try {
-    await pool.query(`DELETE FROM conversations WHERE user_id = $1`, [req.params.userId]);
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: "Erreur." });
-  }
+    const { query } = req.body;
+    const r = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json`);
+    const d = await r.json();
+    res.json({ result: d.AbstractText || d.Answer || "Aucun resultat." });
+  } catch(e) { res.json({ result: null }); }
 });
 
-const PORT = process.env.PORT || 3000;
-initDB().then(() => {
-  app.listen(PORT, () => console.log(`Guidéon sur le port ${PORT}`));
-});
+app.listen(process.env.PORT || 3000, () => console.log("Guideon actif !"));
