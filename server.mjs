@@ -1,7 +1,6 @@
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { createClient } from '@supabase/supabase-js';
 
 const app = express();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -9,11 +8,14 @@ const API_KEY = process.env.GROQ_API_KEY;
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_KEY;
 
-const supabase = SUPABASE_URL && SUPABASE_KEY
-  ? createClient(SUPABASE_URL, SUPABASE_KEY)
-  : null;
+const DB = `${SUPABASE_URL}/rest/v1`;
+const HEADERS = {
+  'apikey': SUPABASE_KEY,
+  'Authorization': `Bearer ${SUPABASE_KEY}`,
+  'Content-Type': 'application/json'
+};
 
-const SYSTEM = { role: "system", content: "Tu es Guideon, un assistant IA cree par Brother Victor Bossou." };
+const SYSTEM = { role: "system", content: "Tu es Guideon, assistant IA cree par Brother Victor Bossou. Tu te souviens de toutes les conversations precedentes avec l utilisateur." };
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -22,16 +24,15 @@ app.post('/api/chat', async (req, res) => {
   try {
     const { message, user_id = 'default' } = req.body;
     let history = [];
-    if (supabase) {
-      const { data } = await supabase
-        .from('conversations')
-        .select('role, content')
-        .eq('user_id', user_id)
-        .order('created_at', { ascending: true })
-        .limit(20);
-      history = data || [];
-    }
-    const messages = [SYSTEM, ...history, { role: 'user', content: message }];
+    try {
+      const r = await fetch(`${DB}/conversations?user_id=eq.${user_id}&order=created_at.asc&limit=30`, { headers: HEADERS });
+      history = await r.json();
+      if (!Array.isArray(history)) history = [];
+      console.log('Historique charge:', history.length);
+    } catch(e) { console.log('Erreur lecture:', e.message); }
+
+    const messages = [SYSTEM, ...history.map(h => ({ role: h.role, content: h.content })), { role: 'user', content: message }];
+
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" },
@@ -40,12 +41,19 @@ app.post('/api/chat', async (req, res) => {
     const data = await response.json();
     if (!data.choices) return res.status(500).json({ error: "Erreur API" });
     const reply = data.choices[0].message.content;
-    if (supabase) {
-      await supabase.from('conversations').insert([
-        { user_id, role: 'user', content: message },
-        { user_id, role: 'assistant', content: reply }
-      ]);
-    }
+
+    try {
+      await fetch(`${DB}/conversations`, {
+        method: 'POST',
+        headers: { ...HEADERS, 'Prefer': 'return=minimal' },
+        body: JSON.stringify([
+          { user_id, role: 'user', content: message },
+          { user_id, role: 'assistant', content: reply }
+        ])
+      });
+      console.log('Sauvegarde OK !');
+    } catch(e) { console.log('Erreur save:', e.message); }
+
     res.json({ reply });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
