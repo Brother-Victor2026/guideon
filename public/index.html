@@ -85,6 +85,7 @@ header{background:linear-gradient(135deg,#1a0533,#0d1f4d);padding:14px 16px;disp
 </div>
 <script>
 const PW="guideon2024";
+  const userId=localStorage.getItem("gid")||crypto.randomUUID();localStorage.setItem("gid",userId);
 let history=[],ve=false,rec=null,il=false;
 function cp(){const p=document.getElementById('pi').value;if(p===PW){document.getElementById('lm').classList.remove('show');}else{document.getElementById('pe').style.display='block';}}
 function tvv(){ve=!ve;document.getElementById('vt').textContent=ve?'🔊':'🔇';}
