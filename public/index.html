@@ -101,8 +101,75 @@ async function sm(){const i=document.getElementById('ui');const msg=i.value.trim
 document.getElementById('ui').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sm();}});
 document.getElementById('ui').addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';});
 </script>
-</body>
-</html>
-</script>
+  <div id="am" style="display:none;position:fixed;inset:0;background:#0a0a1a;z-index:9999;align-items:center;justify-content:center;">
+<div style="background:#1a1a2e;padding:28px;border-radius:16px;width:88%;max-width:340px;border:1px solid #2d1b69;">
+<h2 style="color:#a78bfa;text-align:center;margin-bottom:6px;">🧠 Guidéon</h2>
+<p style="color:#6b7280;text-align:center;font-size:12px;margin-bottom:18px;">Ton assistant IA personnel</p>
+<div style="display:flex;gap:8px;margin-bottom:16px;">
+<button onclick="stab('login')" id="tl" style="flex:1;padding:8px;background:#2d1b69;color:#fff;border:none;border-radius:8px;cursor:pointer;">Connexion</button>
+<button onclick="stab('reg')" id="tr" style="flex:1;padding:8px;background:transparent;color:#a78bfa;border:1px solid #a78bfa;border-radius:8px;cursor:pointer;">Inscription</button>
+</div>
+<input id="an" placeholder="Votre nom" style="display:none;width:100%;padding:10px;background:#0f0f1a;color:#fff;border:1px solid #2d1b69;border-radius:8px;margin-bottom:8px;box-sizing:border-box;">
+<input id="ae" type="email" placeholder="Email" style="width:100%;padding:10px;background:#0f0f1a;color:#fff;border:1px solid #2d1b69;border-radius:8px;margin-bottom:8px;box-sizing:border-box;">
+<input id="ap" type="password" placeholder="Mot de passe" style="width:100%;padding:10px;background:#0f0f1a;color:#fff;border:1px solid #2d1b69;border-radius:8px;margin-bottom:12px;box-sizing:border-box;">
+<p id="ae2" style="color:#f87171;text-align:center;margin-bottom:8px;font-size:13px;display:none;"></p>
+<button onclick="doAuth()" id="ab" style="width:100%;padding:12px;background:linear-gradient(135deg,#4c1d95,#1e3a8a);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:15px;">Se connecter</button>
+</div></div>
+<div id="sidebar" style="display:none;position:fixed;top:0;left:0;bottom:0;width:270px;background:#0f0f1a;z-index:9997;border-right:1px solid #2d1b69;flex-direction:column;padding:12px;overflow-y:auto;">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+<span style="color:#a78bfa;font-weight:bold;">💬 Conversations</span>
+<button onclick="closeSidebar()" style="background:none;border:none;color:#6b7280;font-size:18px;cursor:pointer;">✕</button>
+</div>
+<button onclick="newSession()" style="width:100%;padding:10px;background:linear-gradient(135deg,#4c1d95,#1e3a8a);color:#fff;border:none;border-radius:8px;cursor:pointer;margin-bottom:10px;">➕ Nouvelle conversation</button>
+<input id="srch" placeholder="🔍 Rechercher..." oninput="searchHist(this.value)" style="width:100%;padding:8px;background:#1a1a2e;color:#fff;border:1px solid #2d1b69;border-radius:8px;margin-bottom:8px;box-sizing:border-box;font-size:12px;">
+<div id="srchres" style="display:none;margin-bottom:8px;max-height:150px;overflow-y:auto;"></div>
+<div id="sesslist"></div>
+</div>
+<div id="ubar" style="display:none;position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#0f0f1a,#1a1a2e);padding:8px 16px;z-index:998;border-bottom:1px solid #2d1b69;align-items:center;justify-content:space-between;">
+<div style="display:flex;align-items:center;gap:8px;">
+<button onclick="openSidebar()" style="background:none;border:none;color:#a78bfa;font-size:20px;cursor:pointer;">☰</button>
+<span id="uname" style="color:#a78bfa;font-size:13px;font-weight:bold;"></span>
+</div>
+<div style="display:flex;gap:4px;align-items:center;">
+<select id="msel" onchange="setModel(this.value)" style="padding:4px 6px;background:#0f0f1a;color:#a78bfa;border:1px solid #2d1b69;border-radius:6px;font-size:11px;">
+<option value="llama-70b">🧠 Llama 70B</option>
+<option value="llama-8b">⚡ Llama 8B</option>
+<option value="mixtral">🔥 Mixtral</option>
+<option value="gemma">💎 Gemma</option>
+</select>
+<input type="range" id="temp" min="0" max="1" step="0.1" value="0.7" title="Créativité" style="width:45px;cursor:pointer;" oninput="setTemp(this.value)">
+<button onclick="showImgModal()" style="padding:5px 8px;background:#065f46;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:11px;">🖼️</button>
+<button onclick="showProfile()" style="padding:5px 8px;background:#1e3a8a;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:11px;">⚙️</button>
+<button onclick="logout()" style="padding:5px 8px;background:#7f1d1d;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:11px;">🚪</button>
+</div></div>
+<div id="prof" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9998;align-items:flex-start;justify-content:center;overflow-y:auto;padding-top:20px;">
+<div style="background:#1a1a2e;padding:24px;border-radius:16px;width:88%;max-width:360px;border:1px solid #2d1b69;margin-bottom:20px;">
+<h3 style="color:#a78bfa;margin-bottom:16px;">⚙️ Mon Profil</h3>
+<input id="pn" placeholder="Nouveau nom" style="width:100%;padding:10px;background:#0f0f1a;color:#fff;border:1px solid #2d1b69;border-radius:8px;margin-bottom:8px;box-sizing:border-box;">
+<input id="pp" type="password" placeholder="Nouveau mot de passe" style="width:100%;padding:10px;background:#0f0f1a;color:#fff;border:1px solid #2d1b69;border-radius:8px;margin-bottom:8px;box-sizing:border-box;">
+<textarea id="inst" placeholder="Instructions personnalisées..." style="width:100%;padding:10px;background:#0f0f1a;color:#fff;border:1px solid #2d1b69;border-radius:8px;margin-bottom:8px;box-sizing:border-box;height:80px;resize:none;font-family:inherit;font-size:13px;"></textarea>
+<label style="color:#9ca3af;font-size:12px;display:flex;align-items:center;gap:8px;margin-bottom:12px;cursor:pointer;"><input type="checkbox" id="tmpChat"> Mode temporaire</label>
+<button onclick="saveProfile()" style="width:100%;padding:10px;background:#2d1b69;color:#fff;border:none;border-radius:8px;cursor:pointer;margin-bottom:8px;">💾 Sauvegarder</button>
+<button onclick="viewMemory()" style="width:100%;padding:10px;background:#1e3a8a;color:#fff;border:none;border-radius:8px;cursor:pointer;margin-bottom:8px;">🧠 Voir ma mémoire</button>
+<button onclick="clearMem()" style="width:100%;padding:10px;background:#374151;color:#fff;border:none;border-radius:8px;cursor:pointer;margin-bottom:8px;">🗑️ Effacer mémoire</button>
+<button onclick="delAccount()" style="width:100%;padding:10px;background:#7f1d1d;color:#fff;border:none;border-radius:8px;cursor:pointer;margin-bottom:8px;">❌ Supprimer compte</button>
+<button onclick="document.getElementById('prof').style.display='none'" style="width:100%;padding:10px;background:transparent;color:#6b7280;border:1px solid #374151;border-radius:8px;cursor:pointer;">Fermer</button>
+<div id="memview" style="display:none;margin-top:12px;padding:12px;background:#0f0f1a;border-radius:8px;color:#9ca3af;font-size:12px;line-height:1.6;"></div>
+</div></div>
+<div id="imgmod" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9998;align-items:center;justify-content:center;">
+<div style="background:#1a1a2e;padding:24px;border-radius:16px;width:88%;max-width:340px;border:1px solid #2d1b69;">
+<h3 style="color:#a78bfa;margin-bottom:12px;">🖼️ Analyser une image</h3>
+<input id="imgurl" placeholder="URL de l'image" style="width:100%;padding:10px;background:#0f0f1a;color:#fff;border:1px solid #2d1b69;border-radius:8px;margin-bottom:8px;box-sizing:border-box;">
+<input id="imgq" placeholder="Question (optionnel)" style="width:100%;padding:10px;background:#0f0f1a;color:#fff;border:1px solid #2d1b69;border-radius:8px;margin-bottom:12px;box-sizing:border-box;">
+<button onclick="analyzeImg()" style="width:100%;padding:10px;background:linear-gradient(135deg,#065f46,#1e3a8a);color:#fff;border:none;border-radius:8px;cursor:pointer;margin-bottom:8px;">🔍 Analyser</button>
+<button onclick="document.getElementById('imgmod').style.display='none'" style="width:100%;padding:10px;background:transparent;color:#6b7280;border:1px solid #374151;border-radius:8px;cursor:pointer;">Annuler</button>
+</div></div>
+<div id="sharemod" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9998;align-items:center;justify-content:center;">
+<div style="background:#1a1a2e;padding:24px;border-radius:16px;width:88%;max-width:340px;border:1px solid #2d1b69;">
+<h3 style="color:#a78bfa;margin-bottom:12px;">🔗 Partager</h3>
+<p id="sharelink" style="color:#e2e8f0;font-size:12px;word-break:break-all;background:#0f0f1a;padding:10px;border-radius:8px;margin-bottom:12px;"></p>
+<button onclick="copyShare()" style="width:100%;padding:10px;background:#2d1b69;color:#fff;border:none;border-radius:8px;cursor:pointer;margin-bottom:8px;">📋 Copier</button>
+<button onclick="document.getElementById('sharemod').style.display='none'" style="width:100%;padding:10px;background:transparent;color:#6b7280;border:1px solid #374151;border-radius:8px;cursor:pointer;">Fermer</button>
+</div></div>
 </body>
 </html>
