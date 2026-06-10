@@ -85,7 +85,7 @@ app.post('/api/chat', async (req, res) => {
     const sysContent = SYSTEM.content + (userInstructions ? `\n\nInstructions: ${userInstructions}` : '') + (userTime && asksTime ? `\n\nL heure exacte est ${userTime}.` : '');
     const SYSTEM_MSG = { role: 'system', content: sysContent };
     const hist = dbHistory.length > 0 ? dbHistory : (history || []);
-    const messages = [SYSTEM_MSG, ...hist.map(h => ({ role: h.role, content: h.content })), { role: 'user', content: message }];
+    const messages = [SYSTEM_MSG, ...hist.filter(h=>h&&h.role&&h.content).map(h => ({ role: h.role, content: h.content })), { role: 'user', content: message }];
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" },
