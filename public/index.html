@@ -555,8 +555,14 @@ window.sm=async function(){
   }
   try{
     const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg,history:[]})});
-    const d=await r.json();rty();
-    if(d.reply){am('guideon',d.reply);try{if(ve&&sp)sp(d.reply);}catch(e){}}
+    const d=await r.json();
+rty();
+if(d.reply){
+  am('guideon',d.reply);
+  try{if(ve&&sp)sp(d.reply);}catch(e){}
+}else{
+  am('guideon','Debug: '+JSON.stringify(d));
+    }
   }catch(e){rty();am('guideon','Erreur: '+e.message);}
 };   
 </script>
