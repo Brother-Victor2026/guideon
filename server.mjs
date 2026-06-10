@@ -92,7 +92,8 @@ app.post('/api/chat', async (req, res) => {
       body: JSON.stringify({ model: MODELS[model] || "llama-3.3-70b-versatile", messages, temperature: parseFloat(temperature) || 0.7 })
     });
     const data = await response.json();
-    if (!data.choices) return res.status(500).json({ error: "Erreur API" });
+    if (!data.choices) return res.status(500).json({ error: data.error?.message || JSON.stringify(data) });
+    const messages = [SYSTEM_MSG, ...hist.filter(h=>h&&h.role&&h.content).map(h => ({ role: h.role, content: h.content })), { role: 'user', content: message }];
     const reply = data.choices[0].message.content;
     if (token && DB) {
       const user = checkToken(token);
