@@ -97,9 +97,6 @@ app.post('/api/chat', async (req, res) => {
     if (token && DB) {
       const user = checkToken(token);
       if (user) {
-      if (token && DB) {
-      const user = checkToken(token);
-      if (user) {
         const isFirst = dbHistory.length === 0;
         await fetch(`${DB}/conversations`, { method: 'POST', headers: { ...SB, 'Prefer': 'return=minimal' }, body: JSON.stringify([
           { user_id: String(user.id), role: 'user', content: message, session_id },
