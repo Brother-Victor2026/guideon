@@ -554,6 +554,7 @@ function shareMsg(btn){
 
 function showTyping(){
   const chat=document.getElementById('chat');
+  const old=document.getElementById('typing-ind');if(old)old.remove();
   const d=document.createElement('div');
   d.className='msg g';
   d.id='typing-ind';
