@@ -160,7 +160,7 @@ app.get('/api/sessions', async (req, res) => {
     const token = req.headers.authorization?.split(' ')[1];
     const user = checkToken(token);
     if (!user) return res.status(401).json({ error: 'Non autorise' });
-    const r = await fetch(`${DB}/sessions?user_id=eq.${String(user.id)}&order=pinned.desc,created_at.desc`, { headers: SB });
+    const r = await fetch(`${DB}/sessions?user_id=eq.${String(user.id)}&order=created_at.desc`, { headers: SB });
     const data = await r.json();
     res.json(Array.isArray(data) ? data : []);
   } catch(e) { res.status(500).json({ error: e.message }); }
