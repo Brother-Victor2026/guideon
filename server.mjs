@@ -112,8 +112,8 @@ app.post('/api/chat', async (req, res) => {
               await fetch(`${DB}/sessions?id=eq.${session_id}`, { method: 'PATCH', headers: { ...SB, 'Prefer': 'return=minimal' }, body: JSON.stringify({ title }) });
             }
           }
-      }
-    res.json({ reply });
+        }
+        res.json({ reply });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
