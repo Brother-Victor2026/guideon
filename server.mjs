@@ -304,7 +304,7 @@ app.get('/api/search/history', async (req, res) => {
     const user = checkToken(token);
     if (!user) return res.status(401).json({ error: 'Non autorise' });
     const q = req.query.q;
-    const r = await fetch(`${DB}/conversations?user_id=eq.${String(user.id)}&content=ilike.*${encodeURIComponent(q)}*&order=created_at.desc&limit=20`, { headers: SB });
+    const r = await fetch(`${DB}/conversations?user_id=eq.${String(user.id)}&content=ilike.*${encodeURIComponent(q)}*&order=pinned.desc,created_at.desc&limit=20`, { headers: SB });
     const data = await r.json();
     res.json(Array.isArray(data) ? data : []);
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -315,7 +315,7 @@ app.delete('/api/regenerate', async (req, res) => {
     const { token, session_id } = req.body;
     const user = checkToken(token);
     if (!user) return res.status(401).json({ error: 'Non autorise' });
-    const r = await fetch(`${DB}/conversations?user_id=eq.${String(user.id)}&session_id=eq.${session_id}&order=created_at.desc&limit=2`, { headers: SB });
+    const r = await fetch(`${DB}/conversations?user_id=eq.${String(user.id)}&session_id=eq.${session_id}&order=pinned.desc,created_at.desc&limit=2`, { headers: SB });
     const data = await r.json();
     if (Array.isArray(data)) for (const msg of data) await fetch(`${DB}/conversations?id=eq.${msg.id}`, { method: 'DELETE', headers: SB });
     res.json({ success: true });
