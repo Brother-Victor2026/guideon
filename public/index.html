@@ -511,7 +511,7 @@ window.fetch=async function(u,o={}){
           if(imgData.url){
             const chat=document.getElementById('chat');
             const msgDiv=document.createElement('div');msgDiv.className='msg g';
-            msgDiv.innerHTML='<div class="av g">🧠</div><div class="mc"><div class="bub">🎨 Voici votre image !<br><img src="'+imgData.url+'" style="max-width:220px;border-radius:12px;margin-top:8px;"><br><a href="'+imgData.url+'" download target="_blank" style="display:block;margin-top:6px;padding:5px 12px;background:#2d1b69;color:#fff;border-radius:8px;font-size:12px;text-decoration:none;text-align:center;">⬇️ Enregistrer</a></div><div class="mt">'+gt()+'</div></div>';
+            msgDiv.innerHTML='<div class="av g">🧠</div><div class="mc"><div class="bub">🎨 Voici votre image !<br><img src="'+imgData.url+'" style="max-width:220px;border-radius:12px;margin-top:8px;"></div><div class="mt">'+gt()+'</div></div>';
             chat.appendChild(msgDiv);chat.scrollTop=chat.scrollHeight;
           }else{am('guideon','Erreur: '+(imgData.error||'image non générée'));}
         }catch(e){const ty2=document.getElementById('ty');if(ty2)ty2.remove();am('guideon','Erreur image.');}
