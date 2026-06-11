@@ -94,7 +94,7 @@ function tm(){if(!('webkitSpeechRecognition'in window||'SpeechRecognition'in win
 function up(p){const i=document.getElementById('ui');i.value=p;i.focus();}
 function cc(){history=[];document.getElementById('chat').innerHTML='<div class="wl"><div class="big">🧠</div><h2>Nouvelle conversation</h2><p>Que puis-je faire ?</p></div>';}
 function gt(){return new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});}
-function am(role,content,img=null){const chat=document.getElementById('chat');const wl=chat.querySelector('.wl');if(wl)wl.remove();const d=document.createElement('div');d.className='msg '+(role==='guideon'?'g':'user');const av=role==='guideon'?'🧠':'👤';const ac=role==='guideon'?'g':'u';const t=content.replace(/\n/g,'<br>');const ih=img?'<br><img src="'+img+'" style="max-width:220px;border-radius:12px;margin-top:8px">':'';const ah=role==='guideon'?'<div class="ba"><button class="cb" onclick="navigator.clipboard.writeText(this.closest(\'.mc\').querySelector(\'.bub\').innerText)">Copier</button></div>':'';d.innerHTML='<div class="av '+ac+'">'+av+'</div><div class="mc"><div class="bub">'+t+ih+'</div>'+ah+'<div class="mt">'+gt()+'</div></div>';chat.appendChild(d);chat.scrollTop=chat.scrollHeight;}
+function am(role,content,img=null){const chat=document.getElementById('chat');const wl=chat.querySelector('.wl');if(wl)wl.remove();const d=document.createElement('div');d.className='msg '+(role==='guideon'?'g':'user');const av=role==='guideon'?'🧠':'👤';const ac=role==='guideon'?'g':'u';const t=content.replace(/\n/g,'<br>');const ih=img?'<br><img src="'+img+'" style="max-width:220px;border-radius:12px;margin-top:8px">':'';const ah=role==='guideon'?'<div class="ba"><button class="cb" onclick="navigator.clipboard.writeText(this.closest(\'.mc\').querySelector(\'.bub\').innerText)">Copier</button><button class="cb" onclick="fb(this,1)">👍</button><button class="cb" onclick="fb(this,-1)">👎</button><button class="cb" onclick="speak(this)">🔊</button><button class="cb" onclick="shareMsg(this)">Partager</button></div>':'';d.innerHTML='<div class="av '+ac+'">'+av+'</div><div class="mc"><div class="bub">'+t+ih+'</div>'+ah+'<div class="mt">'+gt()+'</div></div>';chat.appendChild(d);chat.scrollTop=chat.scrollHeight;}
 function sty(){const chat=document.getElementById('chat');const d=document.createElement('div');d.className='msg g';d.id='ty';d.innerHTML='<div class="av g">🧠</div><div class="ty"><span></span><span></span><span></span></div>';chat.appendChild(d);chat.scrollTop=chat.scrollHeight;}
 function rty(){const t=document.getElementById('ty');if(t)t.remove();}
 async function sm(){const i=document.getElementById('ui');const msg=i.value.trim();if(!msg)return;i.value='';i.style.height='auto';am('user',msg);sty();try{if(msg.startsWith('/image ')){const p=msg.substring(7);const r=await fetch('/api/image',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:p})});const d=await r.json();rty();am('guideon','Voici votre image !',d.url);return;}if(msg.startsWith('!web ')){const q=msg.substring(5);const sr=await fetch('/api/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:q})});const sd=await sr.json();const fm=sd.result?'[Info: '+sd.result+']\n\n'+q:q;const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:fm,history})});const d=await r.json();rty();history.push({role:'user',content:fm});history.push({role:'assistant',content:d.reply});am('guideon',d.reply);sp(d.reply);return;}const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg,history})});const d=await r.json();rty();if(d.reply){history.push({role:'user',content:msg});history.push({role:'assistant',content:d.reply});am('guideon',d.reply);sp(d.reply);}}catch(e){rty();am('guideon','Erreur: '+e.message);}}
@@ -526,6 +526,33 @@ window.fetch=async function(u,o={}){
   return _of(u,o);
 };
 
+
+function fb(btn,val){
+  const card=btn.closest('.ba');
+  card.querySelectorAll('.cb').forEach(b=>{if(b.textContent==='👍'||b.textContent==='👎')b.style.opacity='0.4';});
+  btn.style.opacity='1';
+  try{
+    const tok=localStorage.getItem('gtoken');
+    const text=btn.closest('.mc').querySelector('.bub').innerText;
+    fetch('/api/feedback',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({message:text,rating:val})});
+  }catch(e){}
+}
+function speak(btn){
+  try{
+    const text=btn.closest('.mc').querySelector('.bub').innerText;
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(text);
+    u.lang='fr-FR';
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+function shareMsg(btn){
+  try{
+    const text=btn.closest('.mc').querySelector('.bub').innerText;
+    if(navigator.share){navigator.share({text:text});}
+    else{navigator.clipboard.writeText(text);alert('Copié (partage non supporté)');}
+  }catch(e){}
+}
 </script>
 </body>
 </html>

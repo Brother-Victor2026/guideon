@@ -324,4 +324,17 @@ app.delete('/api/regenerate', async (req, res) => {
 
 app.get('/api/models', (req, res) => { res.json(Object.keys(MODELS)); });
 
+
+app.post('/api/feedback', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    const user = checkToken(token);
+    const { message, rating } = req.body;
+    if (user && DB) {
+      await fetch(`${DB}/feedback`, { method: 'POST', headers: { ...SB, 'Prefer': 'return=minimal' }, body: JSON.stringify({ user_id: String(user.id), message, rating }) });
+    }
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.listen(process.env.PORT || 3000, () => console.log("Guideon actif !"));
