@@ -525,46 +525,7 @@ window.fetch=async function(u,o={}){
   }
   return _of(u,o);
 };
-window.sm=async function(){
-  const i=document.getElementById('ui');
-  const msg=i?i.value.trim():'';
-  if(!msg)return;
-  if(i){i.value='';i.style.height='auto';}
-  try{am('user',msg);}catch(e){}
-  try{sty();}catch(e){}
-  if(msg.startsWith('/image ')){
-    try{
-      const p=msg.substring(7);
-      const r=await fetch('/api/image',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:p})});
-      const d=await r.json();rty();
-      am('guideon','Voici votre image !',d.url);
-    }catch(e){rty();am('guideon','Erreur image.');}
-    return;
-  }
-  if(msg.startsWith('!web ')){
-    try{
-      const q=msg.substring(5);
-      const sr=await fetch('/api/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:q})});
-      const sd=await sr.json();
-      const fm=sd.result?'[Info: '+sd.result+']\n\n'+q:q;
-      const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:fm,history:[]})});
-      const d=await r.json();rty();
-      if(d.reply)am('guideon',d.reply);
-    }catch(e){rty();am('guideon','Erreur: '+e.message);}
-    return;
-  }
-  try{
-    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg,history:[]})});
-    const d=await r.json();
-rty();
-if(d.reply){
-  am('guideon',d.reply);
-  try{if(ve&&sp)sp(d.reply);}catch(e){}
-}else{
-  am('guideon','Debug: '+JSON.stringify(d));
-    }
-  }catch(e){rty();am('guideon','Erreur: '+e.message);}
-};   
+
 </script>
 </body>
 </html>
