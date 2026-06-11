@@ -187,7 +187,7 @@ async function loadSessions(){
   const tok=localStorage.getItem('gtoken');if(!tok)return;
   try{
     const r=await fetch('/api/sessions',{headers:{'Authorization':'Bearer '+tok}});
-    const sessions=await r.json();
+    const sessions=await r.json();alert('Sessions: '+JSON.stringify(sessions));
     const list=document.getElementById('sesslist');list.innerHTML='';
     if(!Array.isArray(sessions))return;
     sessions.forEach(s=>{
