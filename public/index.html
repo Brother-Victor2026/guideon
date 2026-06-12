@@ -114,7 +114,7 @@ bub.innerHTML=html;
 const u=new SpeechSynthesisUtterance(text);
 u.lang='fr-FR';u.rate=0.9;
 u.onboundary=function(e){
-if(e.name!=='word')return;
+if(e.name!=='word'&&e.name!=='sentence')return;
 const idx=words.findIndex(w=>e.charIndex>=w.s&&e.charIndex<w.e);
 bub.querySelectorAll('.tts-w').forEach(s=>s.classList.remove('tts-active'));
 if(idx>=0){const sp=bub.querySelector('.tts-w[data-i="'+idx+'"]');if(sp)sp.classList.add('tts-active');}
