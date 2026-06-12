@@ -113,15 +113,20 @@ html+=text.slice(last).replace(/\n/g,'<br>');
 bub.innerHTML=html;
 const u=new SpeechSynthesisUtterance(text);
 u.lang='fr-FR';u.rate=0.9;
-u.onboundary=function(e){
-if(e.name!=='word'&&e.name!=='sentence')return;
-const idx=words.findIndex(w=>e.charIndex>=w.s&&e.charIndex<w.e);
-bub.querySelectorAll('.tts-w').forEach(s=>s.classList.remove('tts-active'));
-if(idx>=0){const sp=bub.querySelector('.tts-w[data-i="'+idx+'"]');if(sp)sp.classList.add('tts-active');}
-};
-u.onend=function(){btn.textContent='🔊';bub.innerHTML=bub.dataset.orig;};
-u.onerror=function(){btn.textContent='🔊';bub.innerHTML=bub.dataset.orig;};
+
 btn.textContent='⏹️';
+const wpm=135*u.rate;
+const msPerWord=60000/wpm;
+let wi=0;
+const hl=setInterval(()=>{
+if(wi>=words.length){clearInterval(hl);return;}
+bub.querySelectorAll('.tts-w').forEach(s=>s.classList.remove('tts-active'));
+const sp=bub.querySelector('.tts-w[data-i="'+wi+'"]');
+if(sp)sp.classList.add('tts-active');
+wi++;
+},msPerWord);
+u.onend=function(){clearInterval(hl);btn.textContent='🔊';bub.innerHTML=bub.dataset.orig;};
+u.onerror=function(){clearInterval(hl);btn.textContent='🔊';bub.innerHTML=bub.dataset.orig;};
 speechSynthesis.speak(u);
 }
 function tm(){if(!('webkitSpeechRecognition'in window||'SpeechRecognition'in window)){alert('Micro non supporte.');return;}if(il){rec.stop();return;}rec=new(window.SpeechRecognition||window.webkitSpeechRecognition)();rec.lang='fr-FR';rec.onstart=()=>{il=true;document.getElementById('mb').classList.add('on');};rec.onresult=(e)=>{document.getElementById('ui').value=e.results[0][0].transcript;};rec.onend=()=>{il=false;document.getElementById('mb').classList.remove('on');};rec.start();}
