@@ -32,7 +32,7 @@ header{background:linear-gradient(135deg,#1a0533,#0d1f4d);padding:14px 16px;disp
 .cb{background:none;border:none;color:#6a6a8a;font-size:12px;cursor:pointer;padding:2px 6px;border-radius:6px}
 .ty{display:flex;gap:5px;padding:12px 16px;background:#1a0533;border:1px solid #2d1b69;border-radius:4px 18px 18px 18px;width:fit-content}
 .ty span{width:7px;height:7px;background:#a78bfa;border-radius:50%;animation:bo 1.2s infinite}
-.ty span:nth-child(2){animation-delay:0.2s}.ty span:nth-child(3){animation-delay:0.4s}
+.ty span:nth-child(2){animation-delay:0.2s}.ty span:nth-child(3){animation-delay:0.4s}.tts-w{transition:background 0.15s ease}.tts-active{background:#a78bfa;border-radius:3px;color:#1a0533}
 @keyframes bo{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-7px)}}
 .ia{padding:12px 14px;background:#0f0f1a;border-top:1px solid #1a1a2e;display:flex;gap:8px;align-items:flex-end}
 #ui{flex:1;background:#1a1a2e;border:1px solid #2a2a4a;color:#e0e0e0;padding:10px 14px;border-radius:22px;font-size:14px;resize:none;outline:none;max-height:120px;font-family:inherit}
@@ -95,7 +95,35 @@ const PW="guideon2024";
 let history=[],ve=false,rec=null,il=false;
 function cp(){const p=document.getElementById('pi').value;if(p===PW){document.getElementById('lm').classList.remove('show');}else{document.getElementById('pe').style.display='block';}}
 function tvv(){ve=!ve;document.getElementById('vt').textContent=ve?'🔊':'🔇';}
-function sp(t){if(!ve)return;const u=new SpeechSynthesisUtterance(t);u.lang='fr-FR';u.rate=0.9;speechSynthesis.speak(u);}function speak(btn){if(speechSynthesis.speaking){speechSynthesis.cancel();document.querySelectorAll('.cb').forEach(b=>{if(b.textContent.indexOf('⏹️')>=0)b.textContent='🔊';});return;}const t=btn.closest('.mc').querySelector('.bub').innerText;const u=new SpeechSynthesisUtterance(t);u.lang='fr-FR';u.rate=0.9;u.onend=function(){btn.textContent='🔊';};u.onerror=function(){btn.textContent='🔊';};btn.textContent='⏹️';speechSynthesis.speak(u);}
+function sp(t){if(!ve)return;const u=new SpeechSynthesisUtterance(t);u.lang='fr-FR';u.rate=0.9;speechSynthesis.speak(u);}function speak(btn){
+const bub=btn.closest('.mc').querySelector('.bub');
+if(speechSynthesis.speaking){
+speechSynthesis.cancel();
+document.querySelectorAll('.cb').forEach(b=>{if(b.textContent.indexOf('⏹️')>=0)b.textContent='🔊';});
+document.querySelectorAll('.tts-w').forEach(s=>s.classList.remove('tts-active'));
+return;
+}
+if(!bub.dataset.orig)bub.dataset.orig=bub.innerHTML;
+const text=bub.innerText;
+const words=[];const re2=/\S+/g;let mm;
+while((mm=re2.exec(text))!==null){words.push({w:mm[0],s:mm.index,e:mm.index+mm[0].length});}
+let html='';let last=0;
+words.forEach((w,i)=>{html+=text.slice(last,w.s).replace(/\n/g,'<br>');html+='<span class="tts-w" data-i="'+i+'">'+w.w+'</span>';last=w.e;});
+html+=text.slice(last).replace(/\n/g,'<br>');
+bub.innerHTML=html;
+const u=new SpeechSynthesisUtterance(text);
+u.lang='fr-FR';u.rate=0.9;
+u.onboundary=function(e){
+if(e.name!=='word')return;
+const idx=words.findIndex(w=>e.charIndex>=w.s&&e.charIndex<w.e);
+bub.querySelectorAll('.tts-w').forEach(s=>s.classList.remove('tts-active'));
+if(idx>=0){const sp=bub.querySelector('.tts-w[data-i="'+idx+'"]');if(sp)sp.classList.add('tts-active');}
+};
+u.onend=function(){btn.textContent='🔊';bub.innerHTML=bub.dataset.orig;};
+u.onerror=function(){btn.textContent='🔊';bub.innerHTML=bub.dataset.orig;};
+btn.textContent='⏹️';
+speechSynthesis.speak(u);
+}
 function tm(){if(!('webkitSpeechRecognition'in window||'SpeechRecognition'in window)){alert('Micro non supporte.');return;}if(il){rec.stop();return;}rec=new(window.SpeechRecognition||window.webkitSpeechRecognition)();rec.lang='fr-FR';rec.onstart=()=>{il=true;document.getElementById('mb').classList.add('on');};rec.onresult=(e)=>{document.getElementById('ui').value=e.results[0][0].transcript;};rec.onend=()=>{il=false;document.getElementById('mb').classList.remove('on');};rec.start();}
 function up(p){const i=document.getElementById('ui');i.value=p;i.focus();}
 function cc(){history=[];document.getElementById('chat').innerHTML='<div class="wl"><div class="big">🧠</div><h2>Nouvelle conversation</h2><p>Que puis-je faire ?</p></div>';}
