@@ -60,6 +60,21 @@ header{background:linear-gradient(135deg,#1a0533,#0d1f4d);padding:14px 16px;disp
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
+<div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#4c1d95,#1e3a8a);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99999;">
+  <div style="font-size:90px;margin-bottom:10px;">🧠</div>
+  <h1 style="color:#c084fc;font-size:30px;font-weight:700;font-family:sans-serif;margin:0;">Guidéon</h1>
+</div>
+<script>
+window.addEventListener('load', function() {
+  setTimeout(function() {
+    var s = document.getElementById('splashScreen');
+    s.style.transition = 'opacity 0.5s';
+    s.style.opacity = '0';
+    setTimeout(function() { s.remove(); }, 500);
+  }, 1200);
+});
+</script>
+
 <div class="mo" id="lm">
 <div class="mb2">
 <div style="font-size:40px;margin-bottom:10px">🧠</div>
