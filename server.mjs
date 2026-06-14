@@ -82,7 +82,7 @@ async function callStabilityAI(rawPrompt) {
     console.error('Prompt envoye a HuggingFace:', englishPrompt);
     let imgResp;
     for (let attempt = 0; attempt < 3; attempt++) {
-      imgResp = await fetch("https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell", {
+      imgResp = await fetch("https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell", {
         method: "POST",
         headers: { "Authorization": `Bearer ${process.env.HUGGINGFACE_KEY}`, "Content-Type": "application/json" },
         body: JSON.stringify({ inputs: englishPrompt })
@@ -101,7 +101,7 @@ async function callStabilityAI(rawPrompt) {
     const base64 = Buffer.from(arrayBuffer).toString('base64');
     return `data:${contentType};base64,${base64}`;
   } catch (e) {
-    console.error('HuggingFace exception:', e.message);
+    console.error('HuggingFace exception:', e.message, e.cause);
     return null;
   }
 }
