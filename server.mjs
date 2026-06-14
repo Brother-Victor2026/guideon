@@ -79,20 +79,18 @@ async function callStabilityAI(rawPrompt) {
     });
     const transData = await transResp.json();
     const englishPrompt = transData.choices?.[0]?.message?.content?.trim() || rawPrompt;
-    console.error('Prompt envoye a Stability:', englishPrompt);
-    const response = await fetch("https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image", {
-      method: "POST",
-      headers: { "Authorization": `Bearer ${process.env.STABILITY_KEY}`, "Content-Type": "application/json", "Accept": "application/json" },
-      body: JSON.stringify({ text_prompts: [{ text: englishPrompt, weight: 1 }], cfg_scale: 7, height: 1024, width: 1024, samples: 1, steps: 20 })
-    });
-    const data = await response.json();
-    if (!data.artifacts?.[0]?.base64) {
-      console.error('Stability AI erreur:', response.status, JSON.stringify(data).slice(0, 300));
+    console.error('Prompt envoye a Pollinations:', englishPrompt);
+    const imgResp = await fetch(`https://image.pollinations.ai/prompt/${encodeURIComponent(englishPrompt)}?width=1024&height=1024&nologo=true&model=flux`);
+    if (!imgResp.ok) {
+      console.error('Pollinations erreur:', imgResp.status);
       return null;
     }
-    return `data:image/png;base64,${data.artifacts[0].base64}`;
+    const contentType = imgResp.headers.get('content-type') || 'image/jpeg';
+    const arrayBuffer = await imgResp.arrayBuffer();
+    const base64 = Buffer.from(arrayBuffer).toString('base64');
+    return `data:${contentType};base64,${base64}`;
   } catch (e) {
-    console.error('Stability AI exception:', e.message);
+    console.error('Pollinations exception:', e.message);
     return null;
   }
 }
