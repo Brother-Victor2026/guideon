@@ -162,11 +162,18 @@ app.post('/api/chat', async (req, res) => {
               pending = pending.slice(fullMatch.index + fullMatch[0].length);
               fullMatch = pending.match(/\[GENERATE_IMAGE:\s*([\s\S]+?)\]/);
             }
-            const holdLen = partialTagSuffixLength(pending);
-            if (pending.length > holdLen) {
-              const toSend = pending.slice(0, pending.length - holdLen);
-              res.write(`data: ${JSON.stringify({ content: toSend })}\n\n`);
-              pending = pending.slice(pending.length - holdLen);
+            const startIdx = pending.indexOf(IMG_TAG_START);
+            if (startIdx !== -1) {
+              const before = pending.slice(0, startIdx);
+              if (before) res.write(`data: ${JSON.stringify({ content: before })}\n\n`);
+              pending = pending.slice(startIdx);
+            } else {
+              const holdLen = partialTagSuffixLength(pending);
+              if (pending.length > holdLen) {
+                const toSend = pending.slice(0, pending.length - holdLen);
+                res.write(`data: ${JSON.stringify({ content: toSend })}\n\n`);
+                pending = pending.slice(pending.length - holdLen);
+              }
             }
           }
         } catch (e) {}
