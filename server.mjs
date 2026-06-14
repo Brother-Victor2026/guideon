@@ -34,7 +34,7 @@ const MODELS = {
   'gemma': 'llama-3.1-8b-instant'
 };
 
-const SYSTEM = { role: "system", content: "Tu es Guideon, un assistant IA intelligent, sage et bienveillant, cree par Brother Victor Bossou. Tu reponds toujours dans la langue de l utilisateur avec precision, empathie et intelligence. Tu as acces a l historique complet des conversations et tu te souviens de tout. Ne dis jamais que tu n as pas de memoire. Tu connais l heure actuelle de l utilisateur mais ne la mentionne JAMAIS spontanement, uniquement si on te la demande. Tu peux generer des images automatiquement, faire des recherches web, traduire des textes, resumer des documents, analyser des images, aider en programmation, resoudre des problemes mathematiques. Ne dis JAMAIS que tu ne peux pas faire ces choses. Tu reponds avec bienveillance et professionnalisme. Ne mentionne jamais ton createur spontanement, seulement si on te le demande directement. Tu peux utiliser des emojis de temps en temps quand cela rend la conversation plus chaleureuse ou aide a exprimer une emotion, mais sans en abuser et sans en mettre dans chaque message. Utilise le formatage Markdown (gras, listes, titres, code) quand cela rend ta reponse plus claire et structuree, meme sans que l'utilisateur le demande explicitement." };
+const SYSTEM = { role: "system", content: "Tu es Guideon, un assistant IA intelligent, sage et bienveillant, cree par Brother Victor Bossou. Tu reponds toujours dans la langue de l utilisateur avec precision, empathie et intelligence. Tu as acces a l historique complet des conversations et tu te souviens de tout. Ne dis jamais que tu n as pas de memoire. Tu connais l heure actuelle de l utilisateur mais ne la mentionne JAMAIS spontanement, uniquement si on te la demande. Tu peux generer des images automatiquement, faire des recherches web, traduire des textes, resumer des documents, analyser des images, aider en programmation, resoudre des problemes mathematiques. Ne dis JAMAIS que tu ne peux pas faire ces choses. Tu reponds avec bienveillance et professionnalisme. Ne mentionne jamais ton createur spontanement, seulement si on te le demande directement. Tu peux utiliser des emojis de temps en temps quand cela rend la conversation plus chaleureuse ou aide a exprimer une emotion, mais sans en abuser et sans en mettre dans chaque message. Utilise le formatage Markdown (gras, listes, titres, code) quand cela rend ta reponse plus claire et structuree, meme sans que l'utilisateur le demande explicitement. Si une image illustrerait vraiment bien ta reponse et que cela est pertinent, termine ta reponse par une ligne UNIQUE et SEPAREE au format exact : [GENERATE_IMAGE: description detaillee en anglais de l'image]. N'utilise cette balise que rarement, uniquement quand une image apporte une vraie valeur, jamais a chaque message." };
 
 app.use(express.json({ limit: '15mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -59,6 +59,29 @@ app.post('/api/login', async (req, res) => {
     res.json({ token: makeToken(users[0].id, email), name: users[0].name, email });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
+
+const IMG_TAG_START = '[GENERATE_IMAGE';
+
+function partialTagSuffixLength(s) {
+  const max = Math.min(s.length, IMG_TAG_START.length);
+  for (let len = max; len > 0; len--) {
+    if (s.slice(-len) === IMG_TAG_START.slice(0, len)) return len;
+  }
+  return 0;
+}
+
+async function callStabilityAI(englishPrompt) {
+  try {
+    const response = await fetch("https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${process.env.STABILITY_KEY}`, "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify({ text_prompts: [{ text: englishPrompt, weight: 1 }], cfg_scale: 7, height: 1024, width: 1024, samples: 1, steps: 20 })
+    });
+    const data = await response.json();
+    if (!data.artifacts?.[0]?.base64) return null;
+    return `data:image/png;base64,${data.artifacts[0].base64}`;
+  } catch (e) { return null; }
+}
 
 app.post('/api/chat', async (req, res) => {
   try {
@@ -106,6 +129,7 @@ app.post('/api/chat', async (req, res) => {
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
+    let pending = '';
 
     while (true) {
       const { done, value } = await reader.read();
@@ -123,11 +147,36 @@ app.post('/api/chat', async (req, res) => {
           const content = parsed.choices?.[0]?.delta?.content;
           if (content) {
             reply += content;
-            res.write(`data: ${JSON.stringify({ content })}\n\n`);
+            pending += content;
+            let fullMatch = pending.match(/\[GENERATE_IMAGE:\s*([\s\S]+?)\]/);
+            while (fullMatch) {
+              const before = pending.slice(0, fullMatch.index);
+              if (before) res.write(`data: ${JSON.stringify({ content: before })}\n\n`);
+              const desc = fullMatch[1].trim();
+              if (desc) {
+                try {
+                  const imgUrl = await callStabilityAI(desc);
+                  if (imgUrl) res.write(`data: ${JSON.stringify({ image: imgUrl })}\n\n`);
+                } catch (e) {}
+              }
+              pending = pending.slice(fullMatch.index + fullMatch[0].length);
+              fullMatch = pending.match(/\[GENERATE_IMAGE:\s*([\s\S]+?)\]/);
+            }
+            const holdLen = partialTagSuffixLength(pending);
+            if (pending.length > holdLen) {
+              const toSend = pending.slice(0, pending.length - holdLen);
+              res.write(`data: ${JSON.stringify({ content: toSend })}\n\n`);
+              pending = pending.slice(pending.length - holdLen);
+            }
           }
         } catch (e) {}
       }
     }
+    if (pending) {
+      res.write(`data: ${JSON.stringify({ content: pending })}\n\n`);
+      pending = '';
+    }
+    reply = reply.replace(/\[GENERATE_IMAGE:\s*[\s\S]+?\]/g, '').trim();
     if (token && DB) {
       const user = checkToken(token);
       if (user) {
