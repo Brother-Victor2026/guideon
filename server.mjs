@@ -79,17 +79,21 @@ async function callStabilityAI(rawPrompt) {
     });
     const transData = await transResp.json();
     const englishPrompt = transData.choices?.[0]?.message?.content?.trim() || rawPrompt;
-    console.error('Prompt envoye a Pollinations:', englishPrompt);
+    console.error('Prompt envoye a HuggingFace:', englishPrompt);
     let imgResp;
-    for (let attempt = 0; attempt < 4; attempt++) {
-      imgResp = await fetch(`https://image.pollinations.ai/prompt/${encodeURIComponent(englishPrompt)}?width=1024&height=1024&nologo=true`);
+    for (let attempt = 0; attempt < 3; attempt++) {
+      imgResp = await fetch("https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${process.env.HUGGINGFACE_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ inputs: englishPrompt })
+      });
       if (imgResp.ok) break;
-      if (imgResp.status !== 402) break;
-      await new Promise(r => setTimeout(r, 2000));
+      if (imgResp.status !== 503) break;
+      await new Promise(r => setTimeout(r, 4000));
     }
     if (!imgResp.ok) {
       const errText = await imgResp.text();
-      console.error('Pollinations erreur:', imgResp.status, errText.slice(0, 300));
+      console.error('HuggingFace erreur:', imgResp.status, errText.slice(0, 300));
       return null;
     }
     const contentType = imgResp.headers.get('content-type') || 'image/jpeg';
@@ -97,7 +101,7 @@ async function callStabilityAI(rawPrompt) {
     const base64 = Buffer.from(arrayBuffer).toString('base64');
     return `data:${contentType};base64,${base64}`;
   } catch (e) {
-    console.error('Pollinations exception:', e.message);
+    console.error('HuggingFace exception:', e.message);
     return null;
   }
 }
