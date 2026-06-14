@@ -71,6 +71,7 @@ function partialTagSuffixLength(s) {
 }
 
 async function callStabilityAI(englishPrompt) {
+  console.error('Prompt envoye a Stability:', englishPrompt);
   try {
     const response = await fetch("https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image", {
       method: "POST",
