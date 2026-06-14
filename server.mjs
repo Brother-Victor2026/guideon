@@ -78,9 +78,15 @@ async function callStabilityAI(englishPrompt) {
       body: JSON.stringify({ text_prompts: [{ text: englishPrompt, weight: 1 }], cfg_scale: 7, height: 1024, width: 1024, samples: 1, steps: 20 })
     });
     const data = await response.json();
-    if (!data.artifacts?.[0]?.base64) return null;
+    if (!data.artifacts?.[0]?.base64) {
+      console.error('Stability AI erreur:', response.status, JSON.stringify(data).slice(0, 300));
+      return null;
+    }
     return `data:image/png;base64,${data.artifacts[0].base64}`;
-  } catch (e) { return null; }
+  } catch (e) {
+    console.error('Stability AI exception:', e.message);
+    return null;
+  }
 }
 
 app.post('/api/chat', async (req, res) => {
