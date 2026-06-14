@@ -70,9 +70,16 @@ function partialTagSuffixLength(s) {
   return 0;
 }
 
-async function callStabilityAI(englishPrompt) {
-  console.error('Prompt envoye a Stability:', englishPrompt);
+async function callStabilityAI(rawPrompt) {
   try {
+    const transResp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ model: "llama-3.1-8b-instant", messages: [{ role: "user", content: `Translate to English, reply with ONLY the English words: "${rawPrompt}"` }], max_tokens: 150 })
+    });
+    const transData = await transResp.json();
+    const englishPrompt = transData.choices?.[0]?.message?.content?.trim() || rawPrompt;
+    console.error('Prompt envoye a Stability:', englishPrompt);
     const response = await fetch("https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image", {
       method: "POST",
       headers: { "Authorization": `Bearer ${process.env.STABILITY_KEY}`, "Content-Type": "application/json", "Accept": "application/json" },
