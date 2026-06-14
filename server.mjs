@@ -80,9 +80,10 @@ async function callStabilityAI(rawPrompt) {
     const transData = await transResp.json();
     const englishPrompt = transData.choices?.[0]?.message?.content?.trim() || rawPrompt;
     console.error('Prompt envoye a Pollinations:', englishPrompt);
-    const imgResp = await fetch(`https://image.pollinations.ai/prompt/${encodeURIComponent(englishPrompt)}?width=1024&height=1024&nologo=true&model=flux`);
+    const imgResp = await fetch(`https://image.pollinations.ai/prompt/${encodeURIComponent(englishPrompt)}?width=1024&height=1024&nologo=true`);
     if (!imgResp.ok) {
-      console.error('Pollinations erreur:', imgResp.status);
+      const errText = await imgResp.text();
+      console.error('Pollinations erreur:', imgResp.status, errText.slice(0, 300));
       return null;
     }
     const contentType = imgResp.headers.get('content-type') || 'image/jpeg';
