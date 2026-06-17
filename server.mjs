@@ -61,13 +61,27 @@ app.post('/api/login', async (req, res) => {
 });
 
 const IMG_TAG_START = '[GENERATE_IMAGE';
+const COPY_PHRASE_START = '(Pour copier';
+const WATCH_TAGS = [IMG_TAG_START, COPY_PHRASE_START];
 
 function partialTagSuffixLength(s) {
-  const max = Math.min(s.length, IMG_TAG_START.length);
-  for (let len = max; len > 0; len--) {
-    if (s.slice(-len) === IMG_TAG_START.slice(0, len)) return len;
+  let best = 0;
+  for (const tag of WATCH_TAGS) {
+    const max = Math.min(s.length, tag.length);
+    for (let len = max; len > 0; len--) {
+      if (s.slice(-len).toLowerCase() === tag.slice(0, len).toLowerCase()) { if (len > best) best = len; break; }
+    }
   }
-  return 0;
+  return best;
+}
+
+function findWatchTagStart(s) {
+  let bestIdx = -1;
+  for (const tag of WATCH_TAGS) {
+    const idx = s.toLowerCase().indexOf(tag.toLowerCase());
+    if (idx !== -1 && (bestIdx === -1 || idx < bestIdx)) bestIdx = idx;
+  }
+  return bestIdx;
 }
 
 async function callStabilityAI(rawPrompt) {
@@ -185,7 +199,14 @@ app.post('/api/chat', async (req, res) => {
               pending = pending.slice(fullMatch.index + fullMatch[0].length);
               fullMatch = pending.match(/\[GENERATE_IMAGE:\s*([\s\S]+?)\]/);
             }
-            const startIdx = pending.indexOf(IMG_TAG_START);
+            let copyMatch = pending.match(/\(\s*pour copier le message[\s\S]{0,150}?copier[- ]coll[ée]r?[\s\S]{0,10}?\)/i);
+            while (copyMatch) {
+              const before = pending.slice(0, copyMatch.index);
+              if (before) res.write(`data: ${JSON.stringify({ content: before })}\n\n`);
+              pending = pending.slice(copyMatch.index + copyMatch[0].length);
+              copyMatch = pending.match(/\(\s*pour copier le message[\s\S]{0,150}?copier[- ]coll[ée]r?[\s\S]{0,10}?\)/i);
+            }
+            const startIdx = findWatchTagStart(pending);
             if (startIdx !== -1) {
               const before = pending.slice(0, startIdx);
               if (before) res.write(`data: ${JSON.stringify({ content: before })}\n\n`);
@@ -207,6 +228,7 @@ app.post('/api/chat', async (req, res) => {
       pending = '';
     }
     reply = reply.replace(/\[GENERATE_IMAGE:\s*[\s\S]+?\]/g, '').trim();
+    reply = reply.replace(/\(?\s*pour copier le message[\s\S]{0,150}?copier[- ]coll[ée]r?[\s\S]{0,10}?\)?/gi, '').trim();
     if (token && DB) {
       const user = checkToken(token);
       if (user) {
