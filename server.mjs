@@ -118,8 +118,11 @@ async function callStabilityAI(rawPrompt) {
       return null;
     }
     const contentType = imgResp.headers.get('content-type') || 'image/jpeg';
+    console.error('HuggingFace reponse OK, content-type:', contentType);
     const arrayBuffer = await imgResp.arrayBuffer();
+    console.error('HuggingFace taille image (bytes):', arrayBuffer.byteLength);
     const base64 = Buffer.from(arrayBuffer).toString('base64');
+    console.error('HuggingFace base64 genere, longueur:', base64.length);
     return `data:${contentType};base64,${base64}`;
   } catch (e) {
     console.error('HuggingFace exception:', e.message, e.cause);
