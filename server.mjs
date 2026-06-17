@@ -96,11 +96,18 @@ async function callStabilityAI(rawPrompt) {
     console.error('Prompt envoye a HuggingFace:', englishPrompt);
     let imgResp;
     for (let attempt = 0; attempt < 3; attempt++) {
-      imgResp = await fetch("https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell", {
-        method: "POST",
-        headers: { "Authorization": `Bearer ${process.env.HUGGINGFACE_KEY}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ inputs: englishPrompt })
-      });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 25000);
+      try {
+        imgResp = await fetch("https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell", {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${process.env.HUGGINGFACE_KEY}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ inputs: englishPrompt }),
+          signal: controller.signal
+        });
+      } finally {
+        clearTimeout(timeoutId);
+      }
       if (imgResp.ok) break;
       if (imgResp.status !== 503) break;
       await new Promise(r => setTimeout(r, 4000));
