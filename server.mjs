@@ -194,6 +194,7 @@ app.post('/api/chat', async (req, res) => {
     const decoder = new TextDecoder();
     let buffer = '';
     let pending = '';
+  let imageDone = false;
 
     while (true) {
       const { done, value } = await reader.read();
@@ -213,7 +214,7 @@ app.post('/api/chat', async (req, res) => {
             reply += content;
             pending += content;
             let fullMatch = pending.match(/\[GENERATE_IMAGE:\s*([\s\S]+?)\]/);
-            while (fullMatch) {
+            while (fullMatch && !imageDone) {
               const before = pending.slice(0, fullMatch.index);
               if (before) res.write(`data: ${JSON.stringify({ content: before })}\n\n`);
               const desc = fullMatch[1].trim();
@@ -223,9 +224,11 @@ app.post('/api/chat', async (req, res) => {
                   if (imgUrl) res.write(`data: ${JSON.stringify({ image: imgUrl })}\n\n`);
                 } catch (e) {}
               }
+              pending = imageDone = true;
               pending = pending.slice(fullMatch.index + fullMatch[0].length);
               fullMatch = pending.match(/\[GENERATE_IMAGE:\s*([\s\S]+?)\]/);
             }
+            if (imageDone) pending = pending.replace(/\[GENERATE_IMAGE:\s*[\s\S]+?\]/g, '');
             let copyMatch = pending.match(/\(\s*pour copier le message[\s\S]{0,150}?copier[- ]coll[ée]r?[\s\S]{0,10}?\)/i);
             while (copyMatch) {
               const before = pending.slice(0, copyMatch.index);
