@@ -300,10 +300,9 @@ app.post('/api/image', async (req, res) => {
     const transResp = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "llama-3.1-8b-instant", messages: [{ role: "user", content: `Translate to English, reply with ONLY the English words: "${prompt}"` }], max_tokens: 100 }) });
     const transData = await transResp.json();
     const englishPrompt = transData.choices?.[0]?.message?.content?.trim() || prompt;
-    const response = await fetch("https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image", { method: "POST", headers: { "Authorization": `Bearer ${process.env.STABILITY_KEY}`, "Content-Type": "application/json", "Accept": "application/json" }, body: JSON.stringify({ text_prompts: [{ text: englishPrompt, weight: 1 }], cfg_scale: 7, height: 1024, width: 1024, samples: 1, steps: 20 }) });
-    const data = await response.json();
-    if (!data.artifacts?.[0]?.base64) return res.status(500).json({ error: 'Image non generee' });
-    res.json({ url: `data:image/png;base64,${data.artifacts[0].base64}` });
+    const imgUrl = await callStabilityAI(englishPrompt);
+    if (!imgUrl) return res.status(500).json({ error: 'Image non generee' });
+    res.json({ url: imgUrl });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
