@@ -30,7 +30,6 @@ function checkToken(t) {
 const MODELS = {
   'llama-70b': 'llama-3.3-70b-versatile',
   'llama-8b': 'llama-3.1-8b-instant',
-  'mixtral': 'mixtral-8x7b-32768',
   'gemma': 'llama-3.1-8b-instant'
 };
 
