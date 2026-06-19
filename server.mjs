@@ -198,6 +198,7 @@ app.post('/api/chat', async (req, res) => {
     let buffer = '';
     let pending = '';
   let imageDone = false;
+  let savedImageUrl = null;
 
     while (true) {
       const { done, value } = await reader.read();
@@ -225,6 +226,7 @@ app.post('/api/chat', async (req, res) => {
                 try {
                   const imgUrl = await callStabilityAI(desc);
                   if (imgUrl) res.write(`data: ${JSON.stringify({ image: imgUrl })}\n\n`);
+              if (imgUrl) savedImageUrl = imgUrl;
                 } catch (e) {}
               }
               pending = imageDone = true;
@@ -268,7 +270,7 @@ app.post('/api/chat', async (req, res) => {
         const isFirst = dbHistory.length === 0;
         await fetch(`${DB}/conversations`, { method: 'POST', headers: { ...SB, 'Prefer': 'return=minimal' }, body: JSON.stringify([
           { user_id: String(user.id), role: 'user', content: message, session_id },
-          { user_id: String(user.id), role: 'assistant', content: reply, session_id }
+          { user_id: String(user.id), role: 'assistant', content: reply, session_id, image_url: savedImageUrl }
         ])});
         if (isFirst && session_id) {
           const titleRes = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "llama-3.1-8b-instant", messages: [{ role: "user", content: `Génère un titre court (max 5 mots) pour cette conversation: "${message}". Réponds UNIQUEMENT avec le titre.` }], max_tokens: 20 }) });
