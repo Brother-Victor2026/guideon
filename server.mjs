@@ -151,20 +151,23 @@ app.post('/api/chat', async (req, res) => {
     }
     const timeWords = ['heure','time','date','quelle heure','what time'];
     const asksTime = timeWords.some(w => message.toLowerCase().includes(w));
-    const visualWords = ['decris','décris','decrit','décrit','montre','montre-moi','fais-moi voir',
-      'fais moi voir','imagine','a quoi ressemble','à quoi ressemble','de quoi ca a l\'air',
-      'de quoi ça a l\'air','dessine','dessine-moi','illustre','illustre-moi','visualise',
-      'raconte une histoire','raconte-moi une histoire','invente une histoire','ecris une histoire',
-      'écris une histoire','genere une image','génère une image','generer une image','générer une image',
-      'cree une image','crée une image','creer une image','créer une image','fais une image',
-      'produis une image','peux-tu generer','peux-tu générer','peux tu generer','peux tu générer',
-      'peux-tu creer','peux-tu créer','peux tu creer','peux tu créer','peux-tu montrer',
-      'peux-tu illustrer','je veux voir','j\'aimerais voir','montre moi a quoi','montre moi à quoi',
-      'photo de','image de','genere-moi','génère-moi','dessine moi','illustre moi','peux tu me montrer',
-      'peux-tu me montrer','representation visuelle','représentation visuelle','rendu visuel',
-      'visualisation de','rendu de','aperçu visuel','apercu visuel','envoie une image','envoie-moi une image',
-      'envoie moi une image','envoie une photo','envoie-moi une photo','envoie moi une photo',
-      'envoie une illustration','envoie-moi'];
+    const visualWords = [
+      'genere','genere-moi','éénere','éénere-moi',
+      'dessine','dessine-moi',
+      'illustre','illustre-moi',
+      'montre','montre-moi',
+      'affiche','affiche-moi',
+      'envoie une image','envoie-moi une image',
+      'represente','represente-moi','éépresente','éépresente-moi',
+      'visualise','visualise-moi',
+      'peins','dépeins','crée une image','crée-moi',
+      'produis une image','imagine',
+      'photo de','image de','portrait de','illustration de',
+      'aperçu de','rendu de',
+      'à quoi ressemble','ça ressemble à quoi','à quoi ça a l\'air',
+      'décris visuellement',
+      'représentation visuelle','rendu visuel','visualisation de'
+    ];
     const wantsVisual = visualWords.some(w => message.toLowerCase().includes(w));
     const visualBoost = wantsVisual ? "\n\nIMPORTANT: la demande actuelle de l'utilisateur appelle "
       + "clairement un contenu visuel ou narratif. Tu DOIS terminer ta reponse par la balise "
@@ -257,7 +260,7 @@ app.post('/api/chat', async (req, res) => {
       res.write(`data: ${JSON.stringify({ content: pending })}\n\n`);
       pending = '';
     }
-    reply = reply.replace(/\[GENERATE_IMAGE:\s*[\s\S]+?\]/g, '').trim();
+    reply = reply.replace(/\[GENERATE_IMAGE:\s*[\s\S]+?\]/g, '').replace(/^\s*true\s*$/m, '').trim();
     reply = reply.replace(/\(?\s*pour copier le message[\s\S]{0,150}?copier[- ]coll[ée]r?[\s\S]{0,10}?\)?/gi, '').trim();
     if (token && DB) {
       const user = checkToken(token);
