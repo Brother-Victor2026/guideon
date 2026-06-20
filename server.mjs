@@ -310,7 +310,13 @@ app.post('/api/image', async (req, res) => {
     const englishPrompt = transData.choices?.[0]?.message?.content?.trim() || prompt;
     const imgUrl = await callStabilityAI(englishPrompt);
     if (!imgUrl) return res.status(500).json({ error: 'Image non generee' });
-    res.json({ url: imgUrl });
+    let comment = 'Voici votre image !';
+    try {
+      const commentResp = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "llama-3.1-8b-instant", messages: [{ role: "user", content: `Ecris une phrase courte et chaleureuse en francais (une seule phrase) pour presenter une image generee a partir de cette description, puis une question de relance courte pour continuer la conversation. Description: "${englishPrompt}". Reponds uniquement avec la phrase et la question, sans guillemets, sans markdown.` }], max_tokens: 80 }) });
+      const commentData = await commentResp.json();
+      comment = commentData.choices?.[0]?.message?.content?.trim() || comment;
+    } catch (e) {}
+    res.json({ url: imgUrl, comment });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
