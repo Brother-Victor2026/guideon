@@ -186,7 +186,7 @@ document.getElementById('chat').scrollTop=document.getElementById('chat').scroll
 }catch(e){console.error('SSE err',e,dd);}
 }
 }
-if(!el){rty();el=am('guideon',full||'(reponse vide)');}else{const bub=el.querySelector('.bub');if(bub)bub.innerHTML=marked.parse(full)+imgHtml;}
+if(!el){rty();if(full)el=am('guideon',full);}else{const bub=el.querySelector('.bub');if(bub)bub.innerHTML=marked.parse(full)+imgHtml;}
 chatHistory.push({role:'user',content:msg});chatHistory.push({role:'assistant',content:full});sp(full);
 }catch(e){rty();am('guideon','Erreur: '+e.message);}
 }
