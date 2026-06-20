@@ -269,7 +269,7 @@ app.post('/api/chat', async (req, res) => {
       if (user) {
         const isFirst = dbHistory.length === 0;
         const convRes = await fetch(`${DB}/conversations`, { method: 'POST', headers: { ...SB, 'Prefer': 'return=minimal' }, body: JSON.stringify([
-          { user_id: String(user.id), role: 'user', content: message, session_id },
+          { user_id: String(user.id), role: 'user', content: message, session_id, image_url: null },
           { user_id: String(user.id), role: 'assistant', content: reply, session_id, image_url: savedImageUrl }
         ])});
     if (!convRes.ok) { console.error('ERREUR insertion conversations:', convRes.status, await convRes.text()); } else { console.log('Insertion conversations OK'); }
