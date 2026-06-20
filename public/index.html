@@ -159,7 +159,7 @@ async function sm(){
 const i=document.getElementById('ui');const msg=i.value.trim();if(!msg)return;i.value='';i.style.height='auto';am('user',msg);sty();
 try{
 if(msg.startsWith('/image ')){
-const p=msg.substring(7);const r=await fetch('/api/image',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:p})});const d=await r.json();rty();am('guideon',d.comment||'Voici votre image !',d.url);return;
+const p=msg.substring(7);const r=await fetch('/api/image',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:p,token:localStorage.getItem('gtoken'),session_id:curSession})});const d=await r.json();rty();am('guideon',d.comment||'Voici votre image !',d.url);return;
 }
 if(msg.startsWith('!web ')){
 const q=msg.substring(5);const sr=await fetch('/api/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:q})});const sd=await sr.json();const fm=sd.result?'[Info: '+sd.result+']\n\n'+q:q;const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:fm,history:chatHistory})});const d=await r.json();rty();am('guideon',d.reply);sp(d.reply);return;
@@ -598,7 +598,7 @@ window.fetch=async function(u,o={}){
       const imgWords=['génère une image','crée une image','génère moi','dessine','montre une image','donne moi une image','fais moi une image','je veux une image','montre moi une image','affiche une image','generate an image','create an image','draw me'];
       if(imgWords.some(w=>msg.toLowerCase().includes(w))){
         try{
-          const ir=await _of('/api/image',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:msg})});
+          const ir=await _of('/api/image',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:msg,token:localStorage.getItem('gtoken'),session_id:curSession})});
           const imgData=await ir.json();
           const ty2=document.getElementById('ty');if(ty2)ty2.remove();
           if(imgData.url){

@@ -305,7 +305,7 @@ app.post('/api/chat/temp', async (req, res) => {
 
 app.post('/api/image', async (req, res) => {
   try {
-    const { prompt } = req.body;
+    const { prompt, token, session_id } = req.body;
     const transResp = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "llama-3.1-8b-instant", messages: [{ role: "user", content: `Translate to English, reply with ONLY the English words: "${prompt}"` }], max_tokens: 100 }) });
     const transData = await transResp.json();
     const englishPrompt = transData.choices?.[0]?.message?.content?.trim() || prompt;
@@ -317,6 +317,17 @@ app.post('/api/image', async (req, res) => {
       const commentData = await commentResp.json();
       comment = commentData.choices?.[0]?.message?.content?.trim() || comment;
     } catch (e) {}
+    if (token && session_id && DB) {
+      try {
+        const user = checkToken(token);
+        if (user) {
+          await fetch(`${DB}/conversations`, { method: 'POST', headers: { ...SB, 'Prefer': 'return=minimal' }, body: JSON.stringify([
+            { user_id: String(user.id), role: 'user', content: prompt, session_id, image_url: null },
+            { user_id: String(user.id), role: 'assistant', content: comment, session_id, image_url: imgUrl }
+          ])});
+        }
+      } catch (e) {}
+    }
     res.json({ url: imgUrl, comment });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
