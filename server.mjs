@@ -272,7 +272,7 @@ app.post('/api/chat', async (req, res) => {
           { user_id: String(user.id), role: 'user', content: message, session_id, image_url: null },
           { user_id: String(user.id), role: 'assistant', content: reply, session_id, image_url: savedImageUrl }
         ])});
-    if (!convRes.ok) { console.error('ERREUR insertion conversations:', convRes.status, await convRes.text()); } else { console.log('Insertion conversations OK'); }
+    if (!convRes.ok) { console.error('ERREUR insertion conversations:', convRes.status, await convRes.text()); }
         if (isFirst && session_id) {
           const titleRes = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "llama-3.1-8b-instant", messages: [{ role: "user", content: `Génère un titre court (max 5 mots) pour cette conversation: "${message}". Réponds UNIQUEMENT avec le titre.` }], max_tokens: 20 }) });
           const titleData = await titleRes.json();
