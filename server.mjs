@@ -92,39 +92,30 @@ async function callStabilityAI(rawPrompt) {
     });
     const transData = await transResp.json();
     const englishPrompt = transData.choices?.[0]?.message?.content?.trim() || rawPrompt;
-    console.error('Prompt envoye a HuggingFace:', englishPrompt);
+    console.error('Prompt envoye a Pollinations:', englishPrompt);
+    const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(englishPrompt)}?width=1024&height=1024&nologo=true`;
     let imgResp;
-    for (let attempt = 0; attempt < 3; attempt++) {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 25000);
-      try {
-        imgResp = await fetch("https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell", {
-          method: "POST",
-          headers: { "Authorization": `Bearer ${process.env.HUGGINGFACE_KEY}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ inputs: englishPrompt }),
-          signal: controller.signal
-        });
-      } finally {
-        clearTimeout(timeoutId);
-      }
-      if (imgResp.ok) break;
-      if (imgResp.status !== 503) break;
-      await new Promise(r => setTimeout(r, 4000));
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    try {
+      imgResp = await fetch(pollinationsUrl, { signal: controller.signal });
+    } finally {
+      clearTimeout(timeoutId);
     }
     if (!imgResp.ok) {
       const errText = await imgResp.text();
-      console.error('HuggingFace erreur:', imgResp.status, errText.slice(0, 300));
+      console.error('Pollinations erreur:', imgResp.status, errText.slice(0, 300));
       return null;
     }
     const contentType = imgResp.headers.get('content-type') || 'image/jpeg';
-    console.error('HuggingFace reponse OK, content-type:', contentType);
+    console.error('Pollinations reponse OK, content-type:', contentType);
     const arrayBuffer = await imgResp.arrayBuffer();
-    console.error('HuggingFace taille image (bytes):', arrayBuffer.byteLength);
+    console.error('Pollinations taille image (bytes):', arrayBuffer.byteLength);
     const base64 = Buffer.from(arrayBuffer).toString('base64');
-    console.error('HuggingFace base64 genere, longueur:', base64.length);
+    console.error('Pollinations base64 genere, longueur:', base64.length);
     return `data:${contentType};base64,${base64}`;
   } catch (e) {
-    console.error('HuggingFace exception:', e.message, e.cause);
+    console.error('Pollinations exception:', e.message, e.cause);
     return null;
   }
 }
