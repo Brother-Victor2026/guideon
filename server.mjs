@@ -115,7 +115,7 @@ async function callStabilityAI(rawPrompt) {
     const filename = `img_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
     const uploadResp = await fetch(`${SUPABASE_URL}/storage/v1/object/images/${filename}`, {
       method: 'POST',
-      headers: { 'apikey': SUPABASE_SERVICE_KEY, 'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`, 'Content-Type': contentType },
+      headers: { 'apikey': SUPABASE_SERVICE_KEY, 'Content-Type': contentType },
       body: Buffer.from(arrayBuffer)
     });
     if (!uploadResp.ok) {
