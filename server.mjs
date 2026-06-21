@@ -108,12 +108,23 @@ async function callStabilityAI(rawPrompt) {
       return null;
     }
     const contentType = imgResp.headers.get('content-type') || 'image/jpeg';
-    console.error('Pollinations reponse OK, content-type:', contentType);
     const arrayBuffer = await imgResp.arrayBuffer();
     console.error('Pollinations taille image (bytes):', arrayBuffer.byteLength);
-    const base64 = Buffer.from(arrayBuffer).toString('base64');
-    console.error('Pollinations base64 genere, longueur:', base64.length);
-    return `data:${contentType};base64,${base64}`;
+    const ext = contentType.includes('png') ? 'png' : 'jpg';
+    const filename = `img_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const uploadResp = await fetch(`${SUPABASE_URL}/storage/v1/object/images/${filename}`, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': contentType },
+      body: Buffer.from(arrayBuffer)
+    });
+    if (!uploadResp.ok) {
+      const errText = await uploadResp.text();
+      console.error('Erreur upload Supabase Storage:', uploadResp.status, errText.slice(0, 300));
+      return null;
+    }
+    const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/images/${filename}`;
+    console.error('Image stockee sur Supabase Storage:', publicUrl);
+    return publicUrl;
   } catch (e) {
     console.error('Pollinations exception:', e.message, e.cause);
     return null;
