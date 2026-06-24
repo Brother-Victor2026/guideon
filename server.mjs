@@ -2,6 +2,8 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
+import { Resend } from 'resend';
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const app = express();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -538,3 +540,32 @@ app.post('/api/feedback', async (req, res) => {
 });
 
 app.listen(process.env.PORT || 3000, () => console.log("Guideon actif !"));
+
+app.post('/api/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email requis' });
+    const r = await fetch(`${DB}/users?email=eq.${encodeURIComponent(email)}`, { headers: SB });
+    const users = await r.json();
+    if (!Array.isArray(users) || !users[0]) return res.json({ message: 'Si cet email existe, un lien a été envoyé' });
+    const token = crypto.randomBytes(32).toString('hex');
+    const expires = new Date(Date.now() + 3600000).toISOString();
+    await fetch(`${DB}/users?email=eq.${encodeURIComponent(email)}`, { method: 'PATCH', headers: { ...SB, 'Content-Type': 'application/json' }, body: JSON.stringify({ reset_token: token, reset_expires: expires }) });
+    const resetUrl = `${process.env.APP_URL || 'https://guideon-8h4m.onrender.com'}/reset-password?token=${token}`;
+    await resend.emails.send({ from: 'Guidéon <onboarding@resend.dev>', to: email, subject: 'Réinitialisation de votre mot de passe Guidéon', html: `<p>Bonjour,</p><p>Cliquez sur ce lien pour réinitialiser votre mot de passe :</p><a href="${resetUrl}">${resetUrl}</a><p>Ce lien expire dans 1 heure.</p>` });
+    res.json({ message: 'Si cet email existe, un lien a été envoyé' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/reset-password', async (req, res) => {
+  try {
+    const { token, password } = req.body;
+    if (!token || !password) return res.status(400).json({ error: 'Token et mot de passe requis' });
+    const r = await fetch(`${DB}/users?reset_token=eq.${token}`, { headers: SB });
+    const users = await r.json();
+    if (!Array.isArray(users) || !users[0]) return res.status(400).json({ error: 'Token invalide' });
+    if (new Date(users[0].reset_expires) < new Date()) return res.status(400).json({ error: 'Token expiré' });
+    await fetch(`${DB}/users?reset_token=eq.${token}`, { method: 'PATCH', headers: { ...SB, 'Content-Type': 'application/json' }, body: JSON.stringify({ password: hashPwd(password), reset_token: null, reset_expires: null }) });
+    res.json({ message: 'Mot de passe mis à jour' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});

@@ -149,8 +149,8 @@ speechSynthesis.speak(u);
 function tm(){if(!('webkitSpeechRecognition'in window||'SpeechRecognition'in window)){alert('Micro non supporte.');return;}if(il){rec.stop();return;}rec=new(window.SpeechRecognition||window.webkitSpeechRecognition)();rec.lang='fr-FR';rec.onstart=()=>{il=true;document.getElementById('mb').classList.add('on');};rec.onresult=(e)=>{document.getElementById('ui').value=e.results[0][0].transcript;};rec.onend=()=>{il=false;document.getElementById('mb').classList.remove('on');};rec.start();}
 function up(p){const i=document.getElementById('ui');i.value=p;i.focus();}
 function cc(){chatHistory=[];document.getElementById('chat').innerHTML='<div class="wl"><div class="big">🧠</div><h2>Nouvelle conversation</h2><p>Que puis-je faire ?</p></div>';addSug();}
-function gt(){return new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});}
-function am(role,content,img=null){const chat=document.getElementById('chat');const wl=chat.querySelector('.wl');if(wl)wl.remove();const d=document.createElement('div');d.className='msg '+(role==='guideon'?'g':'user');const av=role==='guideon'?'🧠':'👤';const ac=role==='guideon'?'g':'u';const t=role==='guideon'?marked.parse(content):content.replace(/\n/g,'<br>');const ih=img?'<br><img src="'+img+'" style="max-width:220px;border-radius:12px;margin-top:8px">':'';const ah=role==='guideon'?'<div class="ba"><button class="cb" onclick="navigator.clipboard.writeText(this.closest(\'.mc\').querySelector(\'.bub\').innerText)">Copier</button><button class="cb" onclick="fb(this,1)">👍</button><button class="cb" onclick="fb(this,-1)">👎</button><button class="cb" onclick="speak(this)">🔊</button><button class="cb" onclick="shareMsg(this)">Partager</button></div>':'';d.innerHTML='<div class="av '+ac+'">'+av+'</div><div class="mc"><div class="bub">'+t+ih+'</div>'+ah+'<div class="mt">'+gt()+'</div></div>';if(content===''){const b=d.querySelector('.bub');if(b)b.dataset.fmt='1'}chat.appendChild(d);chat.scrollTop=chat.scrollHeight;return d;}
+function gt(ts=null){return (ts?new Date(ts):new Date()).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});}
+function am(role,content,img=null,ts=null){const chat=document.getElementById('chat');const wl=chat.querySelector('.wl');if(wl)wl.remove();const d=document.createElement('div');d.className='msg '+(role==='guideon'?'g':'user');const av=role==='guideon'?'🧠':'👤';const ac=role==='guideon'?'g':'u';const t=role==='guideon'?marked.parse(content||''):(content||'').replace(/\n/g,'<br>');const ih=img?'<br><img src="'+img+'" style="max-width:220px;border-radius:12px;margin-top:8px">':'';const ah=role==='guideon'?'<div class="ba"><button class="cb" onclick="navigator.clipboard.writeText(this.closest(\'.mc\').querySelector(\'.bub\').innerText)">Copier</button><button class="cb" onclick="fb(this,1)">👍</button><button class="cb" onclick="fb(this,-1)">👎</button><button class="cb" onclick="speak(this)">🔊</button><button class="cb" onclick="shareMsg(this)">Partager</button></div>':'';d.innerHTML='<div class="av '+ac+'">'+av+'</div><div class="mc"><div class="bub">'+t+ih+'</div>'+ah+'<div class="mt">'+gt(ts)+'</div></div>';if(content===''){const b=d.querySelector('.bub');if(b)b.dataset.fmt='1'}chat.appendChild(d);chat.scrollTop=chat.scrollHeight;return d;}
 function sty(){const chat=document.getElementById('chat');const d=document.createElement('div');d.className='msg g';d.id='ty';d.innerHTML='<div class="av g">🧠</div><div class="ty"><span></span><span></span><span></span></div>';chat.appendChild(d);chat.scrollTop=chat.scrollHeight;}
 function rty(){const t=document.getElementById('ty');if(t)t.remove();}
 function useSug(t){const ui=document.getElementById('ui');ui.value=t.replace(/&#39;/g,"'");ui.focus();ui.style.height='auto';ui.style.height=Math.min(ui.scrollHeight,120)+'px';}
@@ -186,7 +186,7 @@ document.getElementById('chat').scrollTop=document.getElementById('chat').scroll
 }catch(e){console.error('SSE err',e,dd);}
 }
 }
-if(!el){rty();if(full)el=am('guideon',full);}else{const bub=el.querySelector('.bub');if(bub)bub.innerHTML=marked.parse(full)+imgHtml;}
+if(!el){rty();if(full)el=am('guideon',full);}else{const bub=el.querySelector('.bub');if(bub)bub.innerHTML=marked.parse(full)+imgHtml;}const _bub=el&&el.querySelector('.bub');if(_bub)_bub.innerHTML=_bub.innerHTML.replace(/Voici (un|une) (portrait|image|dessin|tableau|illustration|aperçu) de[^.!?\n]*[.!?]?\s*/gi,'');
 chatHistory.push({role:'user',content:msg});chatHistory.push({role:'assistant',content:full});sp(full);
 }catch(e){rty();am('guideon','Erreur: '+e.message);}
 }
@@ -342,7 +342,7 @@ async function switchSession(id){
   try{
     const r=await fetch('/api/history/'+id,{headers:{'Authorization':'Bearer '+tok}});
     const data=await r.json();
-    if(Array.isArray(data)&&data.length>0)data.forEach(m=>am(m.role==='assistant'?'guideon':m.role,m.content,m.image_url));
+    if(Array.isArray(data)&&data.length>0){data.forEach(m=>am(m.role==='assistant'?'guideon':m.role,m.content,m.image_url,m.created_at));chatHistory=data.filter(m=>m.role==='user'||m.role==='assistant').map(m=>({role:m.role,content:m.content||''}));}
     else{
       const hr=new Date().getHours();
       const moment=hr<12?'matin':hr<18?'après-midi':'soir';
@@ -350,7 +350,7 @@ async function switchSession(id){
       const name=localStorage.getItem('gname')||'';
       if(chat)chat.innerHTML='<div class="wl"><div class="big">🧠</div><h2>'+salut+(name?' '+name:'')+'</h2><p>Comment puis-je vous aider ce '+moment+' ?</p></div>';addSug();
     }
-  }catch(e){}
+  }catch(e){console.error("ERR switchSession:",e);}
 }
 
 async function pinSession(id,pinned){
@@ -607,7 +607,7 @@ window.fetch=async function(u,o={}){
             msgDiv.innerHTML='<div class="av g">🧠</div><div class="mc"><div class="bub">🎨 '+(imgData.comment||'Voici votre image !')+'<br><img src="'+imgData.url+'" style="max-width:220px;border-radius:12px;margin-top:8px;"></div><div class="mt">'+gt()+'</div></div>';
             chat.appendChild(msgDiv);chat.scrollTop=chat.scrollHeight;
           }else{am('guideon','Erreur: '+(imgData.error||'image non générée'));}
-        }catch(e){const ty2=document.getElementById('ty');if(ty2)ty2.remove();am('guideon','Erreur image.');}
+        }catch(e){const ty2=document.getElementById('ty');if(ty2)ty2.remove();am('guideon','Erreur image: '+String(e.message||e));}
         return new Response(JSON.stringify({reply:''}),{status:200,headers:{'Content-Type':'application/json'}});
       }
       if(document.getElementById('tmpChat')&&document.getElementById('tmpChat').checked){
