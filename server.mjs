@@ -34,7 +34,7 @@ const MODELS = {
   'gemma': 'llama-3.1-8b-instant'
 };
 
-const SYSTEM = { role: "system", content: "Tu es Guideon, un assistant IA intelligent, sage et bienveillant, cree par Brother Victor Bossou. Tu reponds toujours dans la langue de l utilisateur avec precision, empathie et intelligence. Tu as acces a l historique complet des conversations et tu te souviens de tout. Ne dis jamais que tu n as pas de memoire. Tu connais l heure actuelle de l utilisateur mais ne la mentionne JAMAIS spontanement, uniquement si on te la demande. Tu peux generer des images automatiquement, faire des recherches web, traduire des textes, resumer des documents, analyser des images, aider en programmation, resoudre des problemes mathematiques. Ne dis JAMAIS que tu ne peux pas faire ces choses. Tu reponds avec bienveillance et professionnalisme. Ne mentionne jamais ton createur spontanement, seulement si on te le demande directement. Tu peux utiliser des emojis de temps en temps quand cela rend la conversation plus chaleureuse ou aide a exprimer une emotion, mais sans en abuser et sans en mettre dans chaque message. Utilise le formatage Markdown (gras, listes, titres, code) quand cela rend ta reponse plus claire et structuree, meme sans que l'utilisateur le demande explicitement. Si l'utilisateur te demande de decrire, montrer, illustrer ou imaginer quelque chose de visuel (objet, lieu, personnage, paysage, scene), tu DOIS terminer ta reponse par une ligne UNIQUE et SEPAREE au format exact : [GENERATE_IMAGE: description detaillee en anglais de l'image]. Avant cette balise, ecris TOUJOURS une phrase courte et chaleureuse pour presenter l'image que tu vas generer, suivie d'une question de relance pour continuer la conversation. Tu DOIS aussi utiliser cette balise quand tu racontes une histoire courte, decris un personnage, un lieu, une creature ou un objet specifique, meme si l'utilisateur ne l'a pas demande explicitement, car cela enrichit toujours la reponse. Pour les autres types de questions (conversation generale, conseils, calculs, code, etc.), n'utilise cette balise que si une image apporterait une vraie valeur ajoutee. Ne mentionne JAMAIS le bouton copier ou des instructions du type 'pour copier le message, selectionnez et copiez-collez' ; ces fonctionnalites existent deja dans l'interface, n'en parle jamais." };
+const SYSTEM = { role: "system", content: "Tu es Guideon, un assistant IA intelligent, sage et bienveillant, cree par Brother Victor Bossou. Tu reponds toujours dans la langue de l utilisateur avec precision, empathie et intelligence. Tu as acces a l historique complet des conversations et tu te souviens de tout. Ne dis jamais que tu n as pas de memoire. Tu connais l heure actuelle de l utilisateur mais ne la mentionne JAMAIS spontanement, uniquement si on te la demande. Tu peux generer des images automatiquement, faire des recherches web, traduire des textes, resumer des documents, analyser des images, aider en programmation, resoudre des problemes mathematiques. Ne dis JAMAIS que tu ne peux pas faire ces choses. Tu reponds avec bienveillance et professionnalisme. Ne mentionne jamais ton createur spontanement, seulement si on te le demande directement. Tu peux utiliser des emojis de temps en temps quand cela rend la conversation plus chaleureuse ou aide a exprimer une emotion, mais sans en abuser et sans en mettre dans chaque message. Utilise le formatage Markdown (gras, listes, titres, code) quand cela rend ta reponse plus claire et structuree, meme sans que l'utilisateur le demande explicitement. Si l'utilisateur te demande de decrire, montrer, illustrer ou imaginer quelque chose de visuel (objet, lieu, personnage, paysage, scene), tu DOIS terminer ta reponse par une ligne UNIQUE et SEPAREE au format exact : [GENERATE_IMAGE: description detaillee en anglais de l'image]. Ne dis JAMAIS de phrase d'introduction avant cette balise (comme 'Voici un portrait de', 'Voici une image de', 'Voici un dessin de', etc.). La balise doit etre sur sa propre ligne, sans texte avant. N'utilise la balise [GENERATE_IMAGE] UNIQUEMENT si le message contient explicitement les mots: image, photo, illustration, dessin, genere, montre-moi. Pour TOUS les autres messages sans exception (bonjour, conseils, questions, histoires, descriptions, code, etc.), n'utilise JAMAIS cette balise. Ne dis jamais de phrase du type 'Voici un portrait de' ou similaire. Ne mentionne JAMAIS le bouton copier ou des instructions du type 'pour copier le message, selectionnez et copiez-collez' ; ces fonctionnalites existent deja dans l'interface, n'en parle jamais." };
 
 app.use(express.json({ limit: '15mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -43,9 +43,13 @@ app.post('/api/register', async (req, res) => {
   try {
     const { email, password, name } = req.body;
     if (!email || !password) return res.status(400).json({ error: 'Email et mot de passe requis' });
-    const r = await fetch(`${DB}/users`, { method: 'POST', headers: { ...SB, 'Prefer': 'return=representation' }, body: JSON.stringify({ email, password: hashPwd(password), name }) });
+    const checkR = await fetch(`${DB}/users?email=eq.${encodeURIComponent(email)}`, { headers: SB });
+    const checkData = await checkR.json();
+    if (Array.isArray(checkData) && checkData.length > 0) return res.status(400).json({ error: 'Email deja utilise' });
+    const SB_SERVICE = { 'apikey': process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_KEY, 'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
+    const r = await fetch(`${DB}/users`, { method: 'POST', headers: SB_SERVICE, body: JSON.stringify({ email, password: hashPwd(password), name }) });
     const data = await r.json();
-    if (!Array.isArray(data) || !data[0]) return res.status(400).json({ error: 'Email deja utilise' });
+    if (!Array.isArray(data) || !data[0]) return res.status(400).json({ error: data.message || 'Erreur inscription' });
     res.json({ token: makeToken(data[0].id, email), name: data[0].name, email });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -143,7 +147,7 @@ app.post('/api/chat', async (req, res) => {
       if (user) {
         userId = String(user.id);
         const [hRes, uRes] = await Promise.all([
-          fetch(`${DB}/conversations?user_id=eq.${userId}&session_id=eq.${session_id}&order=created_at.asc&limit=30`, { headers: SB }),
+          fetch(`${DB}/conversations?user_id=eq.${userId}&session_id=eq.${session_id}&order=id.asc&limit=30`, { headers: SB }),
           fetch(`${DB}/users?id=eq.${userId}&select=instructions`, { headers: SB })
         ]);
         const hData = await hRes.json();
@@ -225,14 +229,14 @@ app.post('/api/chat', async (req, res) => {
               const before = pending.slice(0, fullMatch.index);
               if (before) res.write(`data: ${JSON.stringify({ content: before })}\n\n`);
               const desc = fullMatch[1].trim();
-              if (desc) {
+              if (desc && wantsVisual) {
                 try {
                   const imgUrl = await callStabilityAI(desc);
                   if (imgUrl) res.write(`data: ${JSON.stringify({ image: imgUrl })}\n\n`);
               if (imgUrl) savedImageUrl = imgUrl;
                 } catch (e) {}
               }
-              pending = imageDone = true;
+              imageDone = true;
               pending = pending.slice(fullMatch.index + fullMatch[0].length);
               fullMatch = pending.match(/\[GENERATE_IMAGE:\s*([\s\S]+?)\]/);
             }
@@ -271,10 +275,8 @@ app.post('/api/chat', async (req, res) => {
       const user = checkToken(token);
       if (user) {
         const isFirst = dbHistory.length === 0;
-        const convRes = await fetch(`${DB}/conversations`, { method: 'POST', headers: { ...SB, 'Prefer': 'return=minimal' }, body: JSON.stringify([
-          { user_id: String(user.id), role: 'user', content: message, session_id, image_url: null },
-          { user_id: String(user.id), role: 'assistant', content: reply, session_id, image_url: savedImageUrl }
-        ])});
+        await fetch(`${DB}/conversations`, { method: 'POST', headers: { ...SB, 'Prefer': 'return=minimal' }, body: JSON.stringify([{ user_id: String(user.id), role: 'user', content: message, session_id, image_url: null }])});
+        const convRes = await fetch(`${DB}/conversations`, { method: 'POST', headers: { ...SB, 'Prefer': 'return=minimal' }, body: JSON.stringify([{ user_id: String(user.id), role: 'assistant', content: reply, session_id, image_url: savedImageUrl }])});
     if (!convRes.ok) { console.error('ERREUR insertion conversations:', convRes.status, await convRes.text()); }
         if (isFirst && session_id) {
           const titleRes = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "llama-3.1-8b-instant", messages: [{ role: "user", content: `Génère un titre court (max 5 mots) pour cette conversation: "${message}". Réponds UNIQUEMENT avec le titre.` }], max_tokens: 20 }) });
@@ -316,7 +318,7 @@ app.post('/api/image', async (req, res) => {
     if (!imgUrl) return res.status(500).json({ error: 'Image non generee' });
     let comment = 'Voici votre image !';
     try {
-      const commentResp = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "llama-3.1-8b-instant", messages: [{ role: "user", content: `Ecris une phrase courte et chaleureuse en francais (une seule phrase) pour presenter une image generee a partir de cette description, puis une question de relance courte pour continuer la conversation. Description: "${englishPrompt}". Reponds uniquement avec la phrase et la question, sans guillemets, sans markdown.` }], max_tokens: 80 }) });
+      const commentResp = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "llama-3.1-8b-instant", messages: [{ role: "user", content: `En une seule phrase tres courte en francais, presente cette image sans utiliser les mots 'Voici', 'portrait', 'illustration'. Description: "${englishPrompt}". Reponds uniquement avec la phrase, sans guillemets, sans markdown.` }], max_tokens: 80 }) });
       const commentData = await commentResp.json();
       comment = commentData.choices?.[0]?.message?.content?.trim() || comment;
     } catch (e) {}
@@ -332,7 +334,7 @@ app.post('/api/image', async (req, res) => {
       } catch (e) {}
     }
     res.json({ url: imgUrl, comment });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { console.error('ERREUR /api/image:', e.message); res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/search', async (req, res) => {
@@ -411,7 +413,7 @@ app.get('/api/history/:sessionId', async (req, res) => {
     const token = req.headers.authorization?.split(' ')[1];
     const user = checkToken(token);
     if (!user) return res.status(401).json({ error: 'Non autorise' });
-    const r = await fetch(`${DB}/conversations?user_id=eq.${String(user.id)}&session_id=eq.${req.params.sessionId}&order=created_at.asc&limit=50`, { headers: SB });
+    const r = await fetch(`${DB}/conversations?user_id=eq.${String(user.id)}&session_id=eq.${req.params.sessionId}&order=id.asc&limit=500`, { headers: SB });
     const data = await r.json();
     res.json(Array.isArray(data) ? data : []);
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -478,7 +480,7 @@ app.get('/api/export/:sessionId', async (req, res) => {
     const token = req.headers.authorization?.split(' ')[1];
     const user = checkToken(token);
     if (!user) return res.status(401).json({ error: 'Non autorise' });
-    const r = await fetch(`${DB}/conversations?user_id=eq.${String(user.id)}&session_id=eq.${req.params.sessionId}&order=created_at.asc`, { headers: SB });
+    const r = await fetch(`${DB}/conversations?user_id=eq.${String(user.id)}&session_id=eq.${req.params.sessionId}&order=id.asc`, { headers: SB });
     const data = await r.json();
     let text = 'Conversation Guideon\n\n';
     if (Array.isArray(data)) data.forEach(m => { text += (m.role === 'user' ? 'Vous: ' : 'Guideon: ') + m.content + '\n\n'; });
@@ -490,7 +492,7 @@ app.get('/api/export/:sessionId', async (req, res) => {
 
 app.get('/api/share/:sessionId', async (req, res) => {
   try {
-    const r = await fetch(`${DB}/conversations?session_id=eq.${req.params.sessionId}&order=created_at.asc`, { headers: SB });
+    const r = await fetch(`${DB}/conversations?session_id=eq.${req.params.sessionId}&order=id.asc`, { headers: SB });
     const data = await r.json();
     res.json(Array.isArray(data) ? data : []);
   } catch(e) { res.status(500).json({ error: e.message }); }
