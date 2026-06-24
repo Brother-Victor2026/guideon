@@ -46,7 +46,7 @@ app.post('/api/register', async (req, res) => {
     const checkR = await fetch(`${DB}/users?email=eq.${encodeURIComponent(email)}`, { headers: SB });
     const checkData = await checkR.json();
     if (Array.isArray(checkData) && checkData.length > 0) return res.status(400).json({ error: 'Email deja utilise' });
-    const SB_SERVICE = { 'apikey': process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_KEY, 'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
+    const SB_SERVICE = { 'apikey': process.env.SUPABASE_KEY, 'Authorization': `Bearer ${process.env.SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
     const r = await fetch(`${DB}/users`, { method: 'POST', headers: SB_SERVICE, body: JSON.stringify({ email, password: hashPwd(password), name }) });
     const data = await r.json();
     if (!Array.isArray(data) || !data[0]) return res.status(400).json({ error: data.message || 'Erreur inscription' });
