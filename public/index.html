@@ -210,7 +210,6 @@ if(p.content){
 full+=p.content;if(!el){rty();el=am('guideon','');mc=el.querySelector('.mc');el.scrollIntoView()}
 const bub=el.querySelector('.bub');if(bub)bub.innerHTML=marked.parse(full)+imgHtml;
 addCopyButtons(bub);
-if(/whatsapp|facebook|instagram|twitter|tiktok|story|statut|post|message pour|redige|ecris pour/i.test(msg||'')){var cb=document.createElement('div');cb.style.cssText='border:2px solid #a78bfa;border-radius:10px;padding:10px;margin-top:10px;background:#1a1a2e;text-align:center';var cbtn=document.createElement('button');cbtn.textContent='Copier ce message';cbtn.style.cssText='background:#a78bfa;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:14px;cursor:pointer';cbtn.onclick=function(){var ta=document.createElement('textarea');ta.value=bub.innerText.replace('Copier ce message','').trim();ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.focus();ta.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(ta);cbtn.textContent='Copie !';setTimeout(function(){cbtn.textContent='Copier ce message';},2000);};cb.appendChild(cbtn);bub.appendChild(cb);}
 document.getElementById('chat').scrollTop=document.getElementById('chat').scrollHeight;
 }else if(p.image){
 imgHtml='<br><img src="'+p.image+'" style="max-width:220px;border-radius:12px;margin-top:8px;">';
@@ -223,7 +222,7 @@ document.getElementById('chat').scrollTop=document.getElementById('chat').scroll
 }
 }
 if(!el){rty();if(full)el=am('guideon',full);}else{const bub=el.querySelector('.bub');if(bub)bub.innerHTML=marked.parse(full)+imgHtml;
-addCopyButtons(bub);}const _bub=el&&el.querySelector('.bub');if(_bub)_bub.innerHTML=_bub.innerHTML.replace(/Voici (un|une) (portrait|image|dessin|tableau|illustration|aperçu) de[^.!?\n]*[.!?]?\s*/gi,'');
+addCopyButtons(bub);if(/whatsapp|facebook|instagram|twitter|tiktok|story|statut|post|message pour|redige|ecris pour/i.test(msg||'')){var cb=document.createElement('div');cb.style.cssText='border:2px solid #a78bfa;border-radius:10px;padding:10px;margin-top:10px;background:#1a1a2e;text-align:center';var cbtn=document.createElement('button');cbtn.textContent='Copier ce message';cbtn.style.cssText='background:#a78bfa;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:14px;cursor:pointer';cbtn.onclick=function(){var ta=document.createElement('textarea');ta.value=bub.innerText.replace('Copier ce message','').trim();ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.focus();ta.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(ta);cbtn.textContent='Copie !';setTimeout(function(){cbtn.textContent='Copier ce message';},2000);};cb.appendChild(cbtn);bub.appendChild(cb);}}const _bub=el&&el.querySelector('.bub');if(_bub)_bub.innerHTML=_bub.innerHTML.replace(/Voici (un|une) (portrait|image|dessin|tableau|illustration|aperçu) de[^.!?\n]*[.!?]?\s*/gi,'');
 chatHistory.push({role:'user',content:msg});chatHistory.push({role:'assistant',content:full});sp(full);
 }catch(e){rty();am('guideon','Erreur: '+e.message);}
 }
