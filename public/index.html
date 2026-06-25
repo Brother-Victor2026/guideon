@@ -209,17 +209,44 @@ const p=JSON.parse(dd);if(p.error)throw new Error(p.error);
 if(p.content){
 full+=p.content;if(!el){rty();el=am('guideon','');mc=el.querySelector('.mc');el.scrollIntoView()}
 const bub=el.querySelector('.bub');if(bub)bub.innerHTML=marked.parse(full)+imgHtml;
+bub.querySelectorAll('pre code').forEach(function(block){
+  var btn=document.createElement('button');
+  btn.textContent='Copier';
+  btn.style.cssText='position:absolute;right:8px;top:8px;background:#2a2a2a;color:#a78bfa;border:1px solid #a78bfa;border-radius:6px;padding:2px 10px;font-size:12px;cursor:pointer';
+  btn.onclick=function(){navigator.clipboard.writeText(block.innerText);btn.textContent='✓ Copié';setTimeout(()=>btn.textContent='Copier',2000);};
+  var pre=block.parentElement;
+  pre.style.position='relative';
+  pre.insertBefore(btn,pre.firstChild);
+});
 document.getElementById('chat').scrollTop=document.getElementById('chat').scrollHeight;
 }else if(p.image){
 imgHtml='<br><img src="'+p.image+'" style="max-width:220px;border-radius:12px;margin-top:8px;">';
 if(!el){rty();el=am('guideon','');mc=el.querySelector('.mc');el.scrollIntoView()}
 const bub=el.querySelector('.bub');if(bub)bub.innerHTML=marked.parse(full)+imgHtml;
+bub.querySelectorAll('pre code').forEach(function(block){
+  var btn=document.createElement('button');
+  btn.textContent='Copier';
+  btn.style.cssText='position:absolute;right:8px;top:8px;background:#2a2a2a;color:#a78bfa;border:1px solid #a78bfa;border-radius:6px;padding:2px 10px;font-size:12px;cursor:pointer';
+  btn.onclick=function(){navigator.clipboard.writeText(block.innerText);btn.textContent='✓ Copié';setTimeout(()=>btn.textContent='Copier',2000);};
+  var pre=block.parentElement;
+  pre.style.position='relative';
+  pre.insertBefore(btn,pre.firstChild);
+});
 document.getElementById('chat').scrollTop=document.getElementById('chat').scrollHeight;
 }
 }catch(e){console.error('SSE err',e,dd);}
 }
 }
-if(!el){rty();if(full)el=am('guideon',full);}else{const bub=el.querySelector('.bub');if(bub)bub.innerHTML=marked.parse(full)+imgHtml;}const _bub=el&&el.querySelector('.bub');if(_bub)_bub.innerHTML=_bub.innerHTML.replace(/Voici (un|une) (portrait|image|dessin|tableau|illustration|aperçu) de[^.!?\n]*[.!?]?\s*/gi,'');
+if(!el){rty();if(full)el=am('guideon',full);}else{const bub=el.querySelector('.bub');if(bub)bub.innerHTML=marked.parse(full)+imgHtml;
+bub.querySelectorAll('pre code').forEach(function(block){
+  var btn=document.createElement('button');
+  btn.textContent='Copier';
+  btn.style.cssText='position:absolute;right:8px;top:8px;background:#2a2a2a;color:#a78bfa;border:1px solid #a78bfa;border-radius:6px;padding:2px 10px;font-size:12px;cursor:pointer';
+  btn.onclick=function(){navigator.clipboard.writeText(block.innerText);btn.textContent='✓ Copié';setTimeout(()=>btn.textContent='Copier',2000);};
+  var pre=block.parentElement;
+  pre.style.position='relative';
+  pre.insertBefore(btn,pre.firstChild);
+});}const _bub=el&&el.querySelector('.bub');if(_bub)_bub.innerHTML=_bub.innerHTML.replace(/Voici (un|une) (portrait|image|dessin|tableau|illustration|aperçu) de[^.!?\n]*[.!?]?\s*/gi,'');
 chatHistory.push({role:'user',content:msg});chatHistory.push({role:'assistant',content:full});sp(full);
 }catch(e){rty();am('guideon','Erreur: '+e.message);}
 }
