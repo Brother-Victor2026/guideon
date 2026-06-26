@@ -76,7 +76,7 @@ function showForgot() {
     <button onclick="sendForgot()" style="width:100%;padding:10px;background:#7c3aed;color:#fff;border:none;border-radius:8px;cursor:pointer;margin-bottom:8px;">Envoyer le lien</button>
     <button onclick="document.getElementById('forgotModal').remove()" style="width:100%;padding:10px;background:none;color:#a78bfa;border:1px solid #2d1b69;border-radius:8px;cursor:pointer;">Annuler</button>
   </div>`;
-  document.body.appendChild(modal);
+  (document.getElementById('am')||document.body).appendChild(modal);
 }
 
 async function sendForgot() {
