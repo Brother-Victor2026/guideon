@@ -480,11 +480,12 @@ function applyTheme(theme){
   if(theme==='light'){
     document.body.style.background='#f0f2f5';
     document.body.style.color='#111827';
-    document.querySelectorAll('.msg-ai').forEach(el=>{el.style.background='#e2e8f0';el.style.color='#111827';});
+    document.querySelectorAll('.msg-ai').forEach(el=>{el.style.background='#ffffff';el.style.color='#1e1b4b';el.style.border='1px solid #c4b5fd';});
     document.querySelectorAll('.msg-user').forEach(el=>{el.style.color='#fff';});
-    const chat=document.getElementById('chat');if(chat)chat.style.background='#f0f2f5';
-    const sidebar=document.getElementById('sidebar');if(sidebar)sidebar.style.background='#e2e8f0';
-    const ubar=document.getElementById('ubar');if(ubar)ubar.style.background='linear-gradient(135deg,#c7d2fe,#818cf8)';
+    document.querySelectorAll('p,span,div').forEach(el=>{if(el.style.color==='rgb(167, 139, 250)')el.style.color='#4c1d95';});
+    const chat=document.getElementById('chat');if(chat){chat.style.background='#f0f2f5';}
+    const sidebar=document.getElementById('sidebar');if(sidebar)sidebar.style.background='#e8e4f9';
+    const ubar=document.getElementById('ubar');if(ubar)ubar.style.background='linear-gradient(135deg,#7c3aed,#4f46e5)';
   } else {
     document.body.style.background='#0f0f1a';
     document.body.style.color='#fff';
@@ -494,7 +495,14 @@ function applyTheme(theme){
   }
 }
 // Appliquer theme au chargement
-(function(){const t=localStorage.getItem('gtheme');if(t)applyTheme(t);})();
+(function(){
+  const t=localStorage.getItem('gtheme');
+  if(t){
+    applyTheme(t);
+    const sel=document.getElementById('themeSelect');
+    if(sel)sel.value=t;
+  }
+})();
 
 async function showStats(){
   const tok=localStorage.getItem('gtoken');if(!tok)return;
