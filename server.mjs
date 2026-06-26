@@ -557,6 +557,48 @@ app.post('/api/forgot-password', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+app.get('/reset-password', (req, res) => {
+  const token = req.query.token || '';
+  const html = [
+    '<!DOCTYPE html><html lang="fr"><head>',
+    '<meta charset="UTF-8">',
+    '<meta name="viewport" content="width=device-width,initial-scale=1">',
+    '<title>Reinitialisation - Guideon</title>',
+    '<style>',
+    '*{box-sizing:border-box;margin:0;padding:0}',
+    'body{background:#0f0f1a;display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:sans-serif}',
+    '.card{background:#1a1a2e;border-radius:16px;padding:32px;width:90%;max-width:400px}',
+    'h2{color:#a78bfa;margin-bottom:20px;text-align:center}',
+    'input{width:100%;padding:12px;background:#0f0f1a;border:1px solid #2d1b69;border-radius:8px;color:#fff;font-size:14px;margin-bottom:12px}',
+    'button{width:100%;padding:12px;background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer}',
+    '#msg{color:#a78bfa;font-size:13px;margin-top:10px;text-align:center}',
+    '</style></head><body>',
+    '<div class="card">',
+    '<h2>Nouveau mot de passe</h2>',
+    '<input type="password" id="np" placeholder="Nouveau mot de passe">',
+    '<input type="password" id="cp" placeholder="Confirmer le mot de passe">',
+    '<button onclick="go()">Enregistrer</button>',
+    '<div id="msg"></div>',
+    '</div>',
+    '<script>',
+    'var tok="' + token + '";',
+    'async function go(){',
+    'var np=document.getElementById("np").value;',
+    'var cp=document.getElementById("cp").value;',
+    'var msg=document.getElementById("msg");',
+    'if(!np||np.length<6){msg.textContent="Minimum 6 caracteres.";return}',
+    'if(np!==cp){msg.textContent="Les mots de passe ne correspondent pas.";return}',
+    'var r=await fetch("/api/reset-password",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token:tok,password:np})});',
+    'var d=await r.json();',
+    'if(r.ok){msg.textContent="Mot de passe mis a jour. Redirection...";setTimeout(()=>window.location.href="/",2000);}',
+    'else{msg.textContent=d.error||"Erreur.";}',
+    '}',
+    '<\/script>',
+    '</body></html>'
+  ].join('');
+  res.send(html);
+});
+
 app.post('/api/reset-password', async (req, res) => {
   try {
     const { token, password } = req.body;
