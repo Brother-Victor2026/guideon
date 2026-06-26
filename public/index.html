@@ -352,6 +352,7 @@ sessions.forEach(s=>{
       div.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:4px;"><span onclick="switchSession('+s.id+')" style="color:#e2e8f0;font-size:12px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;">'+(s.pinned?'📌':'💬')+' '+title+'</span><div style="display:flex;gap:2px;flex-shrink:0;"><button onclick="pinSession('+s.id+','+!s.pinned+')" style="background:none;border:none;color:'+(s.pinned?'#fbbf24':'#6b7280')+';cursor:pointer;font-size:12px;padding:0 2px;">📌</button><button onclick="renameSession('+s.id+',\''+title+'\')" style="background:none;border:none;color:#a78bfa;cursor:pointer;font-size:12px;padding:0 2px;">✏️</button><button onclick="exportSess('+s.id+')" style="background:none;border:none;color:#60a5fa;cursor:pointer;font-size:12px;padding:0 2px;">⬇️</button><button onclick="shareSess('+s.id+')" style="background:none;border:none;color:#34d399;cursor:pointer;font-size:12px;padding:0 2px;">🔗</button><button onclick="deleteSession('+s.id+')" style="background:none;border:none;color:#f87171;cursor:pointer;font-size:12px;padding:0 2px;">🗑</button></div></div><div style="font-size:10px;color:#6b7280;margin-top:2px;padding-left:4px;">'+relDate(s.created_at)+'</div>';
       list.appendChild(div);
     });
+  applyTheme(localStorage.getItem("gtheme"));
   }catch(e){}
 }
 
