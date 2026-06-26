@@ -222,7 +222,7 @@ document.getElementById('chat').scrollTop=document.getElementById('chat').scroll
 }
 }
 if(!el){rty();if(full)el=am('guideon',full);}else{const bub=el.querySelector('.bub');if(bub)bub.innerHTML=marked.parse(full)+imgHtml;
-addCopyButtons(bub);if(/whatsapp|facebook|instagram|twitter|tiktok|story|statut|post|message pour|redige|ecris pour/i.test(msg||'')){const postMatch=bub.innerText.match(/"([^"]{20,})"/s);const postText=postMatch?postMatch[1]:bub.innerText;const cb=document.createElement('div');cb.style.cssText='position:relative;background:#1a0a2e;border:2px solid #a78bfa;border-radius:8px;padding:16px 12px 12px 12px;margin-top:10px;overflow-x:auto;white-space:pre-wrap;font-family:inherit;';const cbtn=document.createElement('button');cbtn.textContent='Copier';cbtn.style.cssText='position:absolute;right:8px;top:8px;background:none;border:1px solid #a78bfa;color:#a78bfa;border-radius:6px;padding:2px 8px;font-size:12px;cursor:pointer;';cbtn.onclick=function(){const ta=document.createElement('textarea');ta.value=postText;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.focus();ta.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(ta);cbtn.textContent='✅ Copié!';setTimeout(()=>{cbtn.textContent='Copier';},2000);};cb.appendChild(cbtn);const pre=document.createElement('div');pre.textContent=postText;cb.appendChild(pre);bub.appendChild(cb);}}const _bub=el&&el.querySelector('.bub');if(_bub)_bub.innerHTML=_bub.innerHTML.replace(/Voici (un|une) (portrait|image|dessin|tableau|illustration|aperçu) de[^.!?\n]*[.!?]?\s*/gi,'');
+addCopyButtons(bub);}const _bub=el&&el.querySelector('.bub');if(_bub)_bub.innerHTML=_bub.innerHTML.replace(/Voici (un|une) (portrait|image|dessin|tableau|illustration|aperçu) de[^.!?\n]*[.!?]?\s*/gi,'');
 chatHistory.push({role:'user',content:msg});chatHistory.push({role:'assistant',content:full});sp(full);
 }catch(e){rty();am('guideon','Erreur: '+e.message);}
 }
@@ -673,6 +673,24 @@ undefined
 if(document.querySelector('.wl'))addSug();
 function shareMsg(btn){try{const text=btn.closest('.mc').querySelector('.bub').innerText;if(navigator.share){navigator.share({text:text});}else{const ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.focus();ta.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(ta);btn.textContent='OK';setTimeout(()=>{btn.textContent='Partager';},2000);}}catch(e){}}
 function addCopyButtons(el){
+  if(el&&!el.querySelector('.post-copy-block')){
+    const txt=el.innerText||el.textContent||'';
+    if(/#[a-zA-Z]/.test(txt)||/"[^"]{20,}"/.test(txt)){
+      const postMatch=txt.match(/"([^"]{20,})"/s);
+      const postText=postMatch?postMatch[1]:txt;
+      const cb=document.createElement('div');
+      cb.className='post-copy-block';
+      cb.style.cssText='position:relative;background:#1a0a2e;border:2px solid #a78bfa;border-radius:8px;padding:16px 12px 12px 12px;margin-top:10px;white-space:pre-wrap;font-family:inherit;';
+      const cbtn=document.createElement('button');
+      cbtn.textContent='Copier';
+      cbtn.style.cssText='position:absolute;right:8px;top:8px;background:none;border:1px solid #a78bfa;color:#a78bfa;border-radius:6px;padding:2px 8px;font-size:12px;cursor:pointer;';
+      cbtn.onclick=function(){const ta=document.createElement('textarea');ta.value=postText;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.focus();ta.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(ta);cbtn.textContent='✅';setTimeout(()=>{cbtn.textContent='Copier';},2000);};
+      cb.appendChild(cbtn);
+      const pre=document.createElement('div');pre.textContent=postText;cb.appendChild(pre);
+      el.appendChild(cb);
+    }
+  }
+
   el.querySelectorAll('pre code').forEach(function(block){
     if(block.parentElement.querySelector('.copy-code-btn'))return;
     var btn=document.createElement('button');
