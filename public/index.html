@@ -482,9 +482,9 @@ function applyTheme(theme){
     document.body.style.color='#111827';
     document.querySelectorAll('.msg-ai').forEach(el=>{el.style.background='#ffffff';el.style.color='#1e1b4b';el.style.border='1px solid #c4b5fd';});
     document.querySelectorAll('.msg-user').forEach(el=>{el.style.color='#fff';});
-    document.querySelectorAll('p,span,div').forEach(el=>{if(el.style.color==='rgb(167, 139, 250)')el.style.color='#4c1d95';});
     const chat=document.getElementById('chat');if(chat){chat.style.background='#f0f2f5';}
-    const sidebar=document.getElementById('sidebar');if(sidebar)sidebar.style.background='#e8e4f9';
+    const sidebar=document.getElementById('sidebar');if(sidebar){sidebar.style.background='#e8e4f9';sidebar.querySelectorAll('div').forEach(el=>{if(el.style.cssText&&el.style.cssText.includes('border-radius:8px'))el.style.color='#1e1b4b';});}
+    const sesslist=document.getElementById('sesslist');if(sesslist){sesslist.querySelectorAll('div').forEach(el=>{el.style.color='#1e1b4b';});}
     const ubar=document.getElementById('ubar');if(ubar)ubar.style.background='linear-gradient(135deg,#7c3aed,#4f46e5)';
   } else {
     document.body.style.background='#0f0f1a';
