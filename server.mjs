@@ -566,6 +566,28 @@ app.delete('/api/regenerate', async (req, res) => {
 app.get('/api/models', (req, res) => { res.json(Object.keys(MODELS)); });
 
 
+app.get('/api/stats', async (req, res) => {
+  try {
+    const auth = req.headers.authorization;
+    if (!auth) return res.status(401).json({ error: 'Non autorise' });
+    const tok = auth.replace('Bearer ', '');
+    const uRes = await fetch(`${DB}/sessions?token=eq.${encodeURIComponent(tok)}`, { headers: SB });
+    const uData = await uRes.json();
+    if (!Array.isArray(uData) || !uData[0]) return res.status(401).json({ error: 'Token invalide' });
+    const userId = uData[0].user_id;
+    const [convRes, msgRes, memRes] = await Promise.all([
+      fetch(`${DB}/conversations?user_id=eq.${userId}&select=id`, { headers: SB }),
+      fetch(`${DB}/conversations?user_id=eq.${userId}&select=id,messages`, { headers: SB }),
+      fetch(`${DB}/memories?user_id=eq.${userId}&select=id`, { headers: SB })
+    ]);
+    const convs = await convRes.json();
+    const msgs = await msgRes.json();
+    const mems = await memRes.json();
+    const totalMessages = Array.isArray(msgs) ? msgs.reduce((acc, c) => acc + (Array.isArray(c.messages) ? c.messages.length : 0), 0) : 0;
+    res.json({ conversations: Array.isArray(convs) ? convs.length : 0, messages: totalMessages, memories: Array.isArray(mems) ? mems.length : 0 });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.post('/api/feedback', async (req, res) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
