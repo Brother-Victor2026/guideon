@@ -181,7 +181,17 @@ app.post('/api/chat', async (req, res) => {
     const visualBoost = wantsVisual ? "\n\nIMPORTANT: la demande actuelle de l'utilisateur appelle "
       + "clairement un contenu visuel ou narratif. Tu DOIS terminer ta reponse par la balise "
       + "[GENERATE_IMAGE: description en anglais] decrivant ce qui a ete demande ou raconte." : '';
-    const sysContent = SYSTEM.content + (userInstructions ? `\n\nInstructions: ${userInstructions}` : '') + (userTime && asksTime ? `\n\nL heure exacte est ${userTime}.` : '') + visualBoost;
+    // Charger memories utilisateur
+  let memoriesText = '';
+  try {
+    const memRes = await fetch(`${DB}/memories?user_id=eq.${user.id}&order=updated_at.desc&limit=20`, { headers: SB });
+    const mems = await memRes.json();
+    if (Array.isArray(mems) && mems.length > 0) {
+      memoriesText = '\n\nMEMOIRES SUR CET UTILISATEUR (infos retenues des conversations precedentes):\n' + mems.map(m => '- ' + m.content).join('\n');
+    }
+  } catch(e) { console.error('memories load error:', e.message); }
+
+  const sysContent = SYSTEM.content + (userInstructions ? `\n\nInstructions: ${userInstructions}` : '') + (userTime && asksTime ? `\n\nL heure exacte est ${userTime}.` : '') + visualBoost + memoriesText;
     const SYSTEM_MSG = { role: 'system', content: sysContent };
     const hist = dbHistory.length > 0 ? dbHistory : (history || []);
     const messages = [SYSTEM_MSG, ...hist.filter(h=>h&&h.role&&h.content).map(h => ({ role: h.role, content: h.content })), { role: 'user', content: message }];
@@ -290,6 +300,35 @@ app.post('/api/chat', async (req, res) => {
     }
     res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
     res.end();
+    // Extraire et sauvegarder memories en arriere-plan
+    if (reply && user && user.id) {
+      try {
+        const extractRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'llama-3.3-70b-versatile',
+            max_tokens: 200,
+            messages: [
+              { role: 'system', content: 'Tu es un extracteur de memoires. Analyse la conversation et extrait UNIQUEMENT les faits importants sur l utilisateur (prenom, profession, preferences, habitudes, objectifs). Reponds avec une liste de faits courts, un par ligne, commencant par "-". Si aucun fait important, reponds "AUCUN".' },
+              { role: 'user', content: `Message utilisateur: ${prompt}\nReponse assistant: ${reply}` }
+            ]
+          })
+        });
+        const extractData = await extractRes.json();
+        const facts = extractData.choices?.[0]?.message?.content?.trim() || '';
+        if (facts && facts !== 'AUCUN') {
+          const lines = facts.split('\n').filter(l => l.startsWith('-')).map(l => l.slice(1).trim()).filter(Boolean);
+          for (const fact of lines) {
+            await fetch(`${DB}/memories`, {
+              method: 'POST',
+              headers: { ...SB, 'Prefer': 'return=minimal' },
+              body: JSON.stringify({ user_id: user.id, content: fact })
+            });
+          }
+        }
+      } catch(e) { console.error('memories save error:', e.message); }
+    }
   } catch(e) {
     if (!res.headersSent) {
       res.status(500).json({ error: e.message });
