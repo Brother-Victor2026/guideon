@@ -667,13 +667,7 @@ function fb(btn,val){
   }catch(e){}
 }
 
-function shareMsg(btn){
-  try{
-    const text=btn.closest('.mc').querySelector('.bub').innerText;
-    if(navigator.share){navigator.share({text:text});}
-    else{navigator.clipboard.writeText(text);alert('Copié (partage non supporté)');}
-  }catch(e){}
-}
+undefined
 
 
 if(document.querySelector('.wl'))addSug();
