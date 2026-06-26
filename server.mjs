@@ -578,6 +578,7 @@ app.get('/reset-password', (req, res) => {
     '<input type="password" id="np" placeholder="Nouveau mot de passe">',
     '<input type="password" id="cp" placeholder="Confirmer le mot de passe">',
     '<button onclick="go()">Enregistrer</button>',
+    '<button onclick="window.location.href=\'/\'">Annuler</button>',
     '<div id="msg"></div>',
     '</div>',
     '<script>',
