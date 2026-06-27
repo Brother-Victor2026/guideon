@@ -503,6 +503,7 @@ function applyTheme(theme){
     const sel=document.getElementById('themeSelect');
     if(sel)sel.value=t;
   }
+  setTimeout(()=>{const t2=localStorage.getItem('gtheme');if(t2)applyTheme(t2);},1000);
 })();
 
 async function showStats(){
