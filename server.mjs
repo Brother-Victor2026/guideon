@@ -183,7 +183,6 @@ app.post('/api/chat', async (req, res) => {
       + "[GENERATE_IMAGE: description en anglais] decrivant ce qui a ete demande ou raconte." : '';
     // Charger memories utilisateur
   let memoriesText = '';
-  if (user) {
   try {
     const memRes = await fetch(`${DB}/memories?user_id=eq.${user.id}&order=updated_at.desc&limit=20`, { headers: SB });
     const mems = await memRes.json();
@@ -191,12 +190,11 @@ app.post('/api/chat', async (req, res) => {
       memoriesText = '\n\nMEMOIRES SUR CET UTILISATEUR (infos retenues des conversations precedentes):\n' + mems.map(m => '- ' + m.content).join('\n');
     }
   } catch(e) { console.error('memories load error:', e.message); }
-  }
 
   const sysContent = SYSTEM.content + (userInstructions ? `\n\nInstructions: ${userInstructions}` : '') + (userTime && asksTime ? `\n\nL heure exacte est ${userTime}.` : '') + visualBoost + memoriesText;
     const SYSTEM_MSG = { role: 'system', content: sysContent };
     const hist = dbHistory.length > 0 ? dbHistory : (history || []);
-    const messages = [SYSTEM_MSG, ...hist.filter(h=>h&&h.role&&h.content&&!h.content.startsWith('/image')).map(h => ({ role: h.role, content: h.content })), { role: 'user', content: message }];
+    const messages = [SYSTEM_MSG, ...hist.filter(h=>h&&h.role&&h.content).map(h => ({ role: h.role, content: h.content })), { role: 'user', content: message }];
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" },
@@ -370,7 +368,7 @@ app.post('/api/image', async (req, res) => {
         const user = checkToken(token);
         if (user) {
           await fetch(`${DB}/conversations`, { method: 'POST', headers: { ...SB, 'Prefer': 'return=minimal' }, body: JSON.stringify([
-            { user_id: String(user.id), role: 'user', content: `/image ${prompt}`, session_id, image_url: null },
+            { user_id: String(user.id), role: 'user', content: prompt, session_id, image_url: null },
             { user_id: String(user.id), role: 'assistant', content: comment, session_id, image_url: imgUrl }
           ])});
         }
