@@ -368,7 +368,7 @@ app.post('/api/image', async (req, res) => {
         const user = checkToken(token);
         if (user) {
           await fetch(`${DB}/conversations`, { method: 'POST', headers: { ...SB, 'Prefer': 'return=minimal' }, body: JSON.stringify([
-            { user_id: String(user.id), role: 'user', content: prompt, session_id, image_url: null },
+            { user_id: String(user.id), role: 'user', content: `/image ${prompt}`, session_id, image_url: null },
             { user_id: String(user.id), role: 'assistant', content: comment, session_id, image_url: imgUrl }
           ])});
         }
