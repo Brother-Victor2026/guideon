@@ -503,7 +503,9 @@ function applyTheme(theme){
     const sel=document.getElementById('themeSelect');
     if(sel)sel.value=t;
   }
-  setTimeout(()=>{const t2=localStorage.getItem('gtheme');if(t2)applyTheme(t2);},1000);
+  setTimeout(()=>{const t2=localStorage.getItem('gtheme');if(t2)applyTheme(t2);},3000);
+  const chat=document.getElementById('chat');
+  if(chat){const obs=new MutationObserver(()=>{const t3=localStorage.getItem('gtheme');if(t3)applyTheme(t3);});obs.observe(chat,{childList:true,subtree:false});}
 })();
 
 async function showStats(){
@@ -652,7 +654,7 @@ setTimeout(()=>{
     codeObs.observe(c,{childList:true,subtree:true});
     editObs.observe(c,{childList:true,subtree:false});
   }
-},1000);
+},3000);
 
 function addUploadBtn(){
   const mb=document.getElementById('mb');
