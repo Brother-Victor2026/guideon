@@ -183,13 +183,13 @@ app.post('/api/chat', async (req, res) => {
       + "[GENERATE_IMAGE: description en anglais] decrivant ce qui a ete demande ou raconte." : '';
     // Charger memories utilisateur
   let memoriesText = '';
-  if (user) { try {
+  try {
     const memRes = await fetch(`${DB}/memories?user_id=eq.${user.id}&order=updated_at.desc&limit=20`, { headers: SB });
     const mems = await memRes.json();
     if (Array.isArray(mems) && mems.length > 0) {
       memoriesText = '\n\nMEMOIRES SUR CET UTILISATEUR (infos retenues des conversations precedentes):\n' + mems.map(m => '- ' + m.content).join('\n');
     }
-  } catch(e) { console.error('memories load error:', e.message); } }
+  } catch(e) { console.error('memories load error:', e.message); }
 
   const sysContent = SYSTEM.content + (userInstructions ? `\n\nInstructions: ${userInstructions}` : '') + (userTime && asksTime ? `\n\nL heure exacte est ${userTime}.` : '') + visualBoost + memoriesText;
     const SYSTEM_MSG = { role: 'system', content: sysContent };
