@@ -751,7 +751,7 @@ function addCopyButtons(el){
       const cbtn=document.createElement('button');
       cbtn.textContent='Copier';
       cbtn.style.cssText='position:absolute;right:8px;top:8px;background:none;border:1px solid #a78bfa;color:#a78bfa;border-radius:6px;padding:2px 8px;font-size:12px;cursor:pointer;';
-        cbtn.onclick=function(){const t=pre.textContent||'';navigator.clipboard.writeText(t).then(()=>{cbtn.textContent='✅';setTimeout(()=>{cbtn.textContent='Copier';},2000);}).catch(()=>{const ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.top='-9999px';ta.style.left='-9999px';document.body.appendChild(ta);ta.focus();ta.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(ta);cbtn.textContent='✅';setTimeout(()=>{cbtn.textContent='Copier';},2000);});};
+        cbtn.onclick=function(){const t=cbtn.closest('.post-copy-block')?cbtn.closest('.post-copy-block').querySelector('div')?cbtn.closest('.post-copy-block').querySelector('div').textContent||'':el.innerText||'':el.innerText||'';navigator.clipboard.writeText(t).then(()=>{cbtn.textContent='✅';setTimeout(()=>{cbtn.textContent='Copier';},2000);}).catch(()=>{const ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.top='-9999px';ta.style.left='-9999px';document.body.appendChild(ta);ta.focus();ta.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(ta);cbtn.textContent='✅';setTimeout(()=>{cbtn.textContent='Copier';},2000);});};
       cb.appendChild(cbtn);
       const pre=document.createElement('div');pre.textContent=postText;cb.appendChild(pre);
       el.appendChild(cb);
