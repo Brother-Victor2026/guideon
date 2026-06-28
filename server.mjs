@@ -253,12 +253,12 @@ app.post('/api/chat', async (req, res) => {
               fullMatch = pending.match(/\[GENERATE_IMAGE:\s*([\s\S]+?)\]/);
             }
             if (imageDone) pending = pending.replace(/\[GENERATE_IMAGE:\s*[\s\S]+?\]/g, '');
-            let copyMatch = pending.match(/\(\s*pour copier le message[\s\S]{0,150}?copier[- ]coll[ée]r?[\s\S]{0,10}?\)/i);
+
             while (copyMatch) {
               const before = pending.slice(0, copyMatch.index);
               if (before) res.write(`data: ${JSON.stringify({ content: before })}\n\n`);
               pending = pending.slice(copyMatch.index + copyMatch[0].length);
-              copyMatch = pending.match(/\(\s*pour copier le message[\s\S]{0,150}?copier[- ]coll[ée]r?[\s\S]{0,10}?\)/i);
+
             }
             const startIdx = findWatchTagStart(pending);
             if (startIdx !== -1) {
@@ -282,7 +282,7 @@ app.post('/api/chat', async (req, res) => {
       pending = '';
     }
     reply = reply.replace(/\[GENERATE_IMAGE:\s*[\s\S]+?\]/g, '').replace(/^\s*true\s*$/m, '').trim();
-    reply = reply.replace(/\(?\s*pour copier le message[\s\S]{0,150}?copier[- ]coll[ée]r?[\s\S]{0,10}?\)?/gi, '').trim();
+
     if (token && DB) {
       const user = checkToken(token);
       if (user) {
