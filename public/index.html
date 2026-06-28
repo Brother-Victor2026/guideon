@@ -186,7 +186,7 @@ function sty(){const chat=document.getElementById('chat');const d=document.creat
 function rty(){const t=document.getElementById('ty');if(t)t.remove();}
 function useSug(t){const ui=document.getElementById('ui');ui.value=t.replace(/&#39;/g,"'");ui.focus();ui.style.height='auto';ui.style.height=Math.min(ui.scrollHeight,120)+'px';}
 function addSug(){const chat=document.getElementById('chat');const d=document.createElement('div');d.className='sug';d.innerHTML='<button onclick="useSug(this.dataset.t)" data-t="Crée une image d&#39;un paysage de montagne au coucher du soleil">🎨 Crée une image d&#39;un paysage de montagne au coucher du soleil</button><button onclick="useSug(this.dataset.t)" data-t="Résume ce texte que je vais te coller">📝 Résume ce texte que je vais te coller</button><button onclick="useSug(this.dataset.t)" data-t="Donne-moi des conseils pour mieux gérer mon temps">🎓 Donne-moi des conseils pour mieux gérer mon temps</button><button onclick="useSug(this.dataset.t)" data-t="Aide-moi à élaborer un plan pour organiser mon projet">💡 Aide-moi à élaborer un plan pour organiser mon projet</button><button onclick="useSug(this.dataset.t)" data-t="Aide-moi à rédiger un email professionnel">✍️ Aide-moi à rédiger un email professionnel</button><button onclick="useSug(this.dataset.t)" data-t="Aide-moi à analyser ces données">📊 Aide-moi à analyser ces données</button><button onclick="useSug(this.dataset.t)" data-t="Propose-moi des idées créatives pour ce week-end">🔮 Propose-moi des idées créatives pour ce week-end</button><button onclick="useSug(this.dataset.t)" data-t="Surprends-moi avec une anecdote intéressante">🎁 Surprends-moi avec une anecdote intéressante</button><button onclick="useSug(this.dataset.t)" data-t="Analyse cette image que je vais t&#39;envoyer">👁️ Analyse cette image que je vais t&#39;envoyer</button>';chat.appendChild(d);}
-async function sm(){
+async function sm(){if(ve)return;ve=true;
 const i=document.getElementById('ui');const msg=i.value.trim();if(!msg)return;i.value='';i.style.height='auto';am('user',msg);sty();
 try{
 if(msg.startsWith('/image ')){
@@ -219,8 +219,8 @@ document.getElementById('chat').scrollTop=document.getElementById('chat').scroll
 }
 if(!el){rty();if(full)el=am('guideon',full);}else{const bub=el.querySelector('.bub');if(bub)bub.innerHTML=marked.parse(full)+imgHtml;
 addCopyButtons(bub);}const _bub=el&&el.querySelector('.bub');if(_bub)_bub.innerHTML=_bub.innerHTML.replace(/Voici (un|une) (portrait|image|dessin|tableau|illustration|aperçu) de[^.!?\n]*[.!?]?\s*/gi,'');
-chatHistory.push({role:'user',content:msg});chatHistory.push({role:'assistant',content:full});sp(full);
-}catch(e){rty();am('guideon','Erreur: '+e.message);}
+chatHistory.push({role:'user',content:msg});chatHistory.push({role:'assistant',content:full});sp(full);ve=false;
+}catch(e){rty();am('guideon','Erreur: '+e.message);ve=false;}
 }
 document.getElementById('ui').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sm();}});
 document.getElementById('ui').addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';});
