@@ -95,7 +95,7 @@ async function callStabilityAI(rawPrompt) {
     const transResp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ model: "llama-3.1-8b-instant", messages: [{ role: "user", content: `Rewrite this as a short vivid visual scene description in English for an AI image generator. Do not use words like draw, generate, picture of, image of, illustration of - describe the subject and scene directly. Reply with ONLY the description, no quotes: "${rawPrompt}"` }], max_tokens: 150 })
+      body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: `Rewrite this as a short vivid visual scene description in English for an AI image generator. Do not use words like draw, generate, picture of, image of, illustration of - describe the subject and scene directly. Reply with ONLY the description, no quotes: "${rawPrompt}"` }], max_tokens: 150 })
     });
     const transData = await transResp.json();
     const englishPrompt = transData.choices?.[0]?.message?.content?.trim() || rawPrompt;
@@ -292,7 +292,7 @@ app.post('/api/chat', async (req, res) => {
         const convRes = await fetch(`${DB}/conversations`, { method: 'POST', headers: { ...SB, 'Prefer': 'return=minimal' }, body: JSON.stringify([{ user_id: String(user.id), role: 'assistant', content: reply, session_id, image_url: savedImageUrl }])});
     if (!convRes.ok) { console.error('ERREUR insertion conversations:', convRes.status, await convRes.text()); }
         if (isFirst && session_id) {
-          const titleRes = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "llama-3.1-8b-instant", messages: [{ role: "user", content: `Génère un titre court (max 5 mots) pour cette conversation: "${message}". Réponds UNIQUEMENT avec le titre.` }], max_tokens: 20 }) });
+          const titleRes = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: `Génère un titre court (max 5 mots) pour cette conversation: "${message}". Réponds UNIQUEMENT avec le titre.` }], max_tokens: 20 }) });
           const titleData = await titleRes.json();
           const title = titleData.choices?.[0]?.message?.content?.trim() || 'Nouvelle conversation';
           await fetch(`${DB}/sessions?id=eq.${session_id}`, { method: 'PATCH', headers: { ...SB, 'Prefer': 'return=minimal' }, body: JSON.stringify({ title }) });
@@ -353,14 +353,14 @@ app.post('/api/chat/temp', async (req, res) => {
 app.post('/api/image', async (req, res) => {
   try {
     const { prompt, token, session_id } = req.body;
-    const transResp = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "llama-3.1-8b-instant", messages: [{ role: "user", content: `Translate to English, reply with ONLY the English words: "${prompt}"` }], max_tokens: 100 }) });
+    const transResp = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: `Translate to English, reply with ONLY the English words: "${prompt}"` }], max_tokens: 100 }) });
     const transData = await transResp.json();
     const englishPrompt = transData.choices?.[0]?.message?.content?.trim() || prompt;
     const imgUrl = await callStabilityAI(englishPrompt);
     if (!imgUrl) return res.status(500).json({ error: 'Image non generee' });
     let comment = 'Voici votre image !';
     try {
-      const commentResp = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "llama-3.1-8b-instant", messages: [{ role: "user", content: `En une seule phrase tres courte en francais, presente cette image sans utiliser les mots 'Voici', 'portrait', 'illustration'. Description: "${englishPrompt}". Reponds uniquement avec la phrase, sans guillemets, sans markdown.` }], max_tokens: 80 }) });
+      const commentResp = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: `En une seule phrase tres courte en francais, presente cette image sans utiliser les mots 'Voici', 'portrait', 'illustration'. Description: "${englishPrompt}". Reponds uniquement avec la phrase, sans guillemets, sans markdown.` }], max_tokens: 80 }) });
       const commentData = await commentResp.json();
       comment = commentData.choices?.[0]?.message?.content?.trim() || comment;
     } catch (e) {}
