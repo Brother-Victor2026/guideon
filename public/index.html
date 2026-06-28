@@ -770,7 +770,8 @@ function addCopyButtons(el){
       ta.value=txt;ta.style.position='fixed';ta.style.top='-9999px';ta.style.left='-9999px';
       document.body.appendChild(ta);ta.focus();ta.select();
       try{document.execCommand('copy');}catch(e){}
-      document.body.removeChild(ta);
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).catch(()=>{});}
+    document.body.removeChild(ta);
       btn.textContent='✓ Copié';
       setTimeout(function(){btn.textContent='Copier';},2000);
     };

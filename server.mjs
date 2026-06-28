@@ -332,7 +332,7 @@ app.post('/api/chat', async (req, res) => {
   } catch(e) {
     if (!res.headersSent) {
       res.status(500).json({ error: e.message });
-    } else {
+    } else if (!res.writableEnded) {
       res.write(`data: ${JSON.stringify({ error: e.message })}\n\n`);
       res.end();
     }
