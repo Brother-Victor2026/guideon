@@ -203,6 +203,7 @@ app.post('/api/chat', async (req, res) => {
 
     if (!response.ok) {
       const errData = await response.json();
+      console.error("GROQ ERROR:", JSON.stringify(errData));
       return res.status(500).json({ error: errData.error?.message || JSON.stringify(errData) });
     }
 
