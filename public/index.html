@@ -193,7 +193,7 @@ if(msg.startsWith('/image ')){
 const p=msg.substring(7);const r=await fetch('/api/image',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:p,token:localStorage.getItem('gtoken'),session_id:curSession})});const d=await r.json();rty();am('guideon',d.comment||'Voici votre image !',d.url);return;
 }
 if(msg.startsWith('!web ')){
-const q=msg.substring(5);const sr=await fetch('/api/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:q})});const sd=await sr.json();const fm=sd.result?'[Info: '+sd.result+']\n\n'+q:q;const rH1=chatHistory.slice(-20);const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:fm,history:rH1})});const d=await r.json();rty();am('guideon',d.reply);sp(d.reply);return;
+const q=msg.substring(5);const sr=await fetch('/api/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:q})});const sd=await sr.json();const fm=sd.result?'[Info: '+sd.result+']\n\n'+q:q;const rH1=chatHistory.slice(-20);const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:fm,history:rH1})});const d=await r.json();rty();am('guideon',d.reply);return;
 }
 const rH2=chatHistory.slice(-20);const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg,history:rH2})});
 const reader=r.body.getReader();const dec=new TextDecoder();let buf='';let full='';let el=null;let mc;let imgHtml='';
@@ -219,7 +219,7 @@ document.getElementById('chat').scrollTop=document.getElementById('chat').scroll
 }
 if(!el){rty();if(full)el=am('guideon',full);}else{const bub=el.querySelector('.bub');if(bub)bub.innerHTML=marked.parse(full)+imgHtml;
 addCopyButtons(bub);}const _bub=el&&el.querySelector('.bub');if(_bub)_bub.innerHTML=_bub.innerHTML.replace(/Voici (un|une) (portrait|image|dessin|tableau|illustration|aperçu) de[^.!?\n]*[.!?]?\s*/gi,'');
-chatHistory.push({role:'user',content:msg});chatHistory.push({role:'assistant',content:full});sp(full);ve=false;
+chatHistory.push({role:'user',content:msg});chatHistory.push({role:'assistant',content:full});ve=false;
 }catch(e){rty();am('guideon','Erreur: '+e.message);ve=false;}
 }
 document.getElementById('ui').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sm();}});
