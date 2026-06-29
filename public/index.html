@@ -554,7 +554,7 @@ async function analyzeImg(){
   try{
     const r=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({imageUrl:url,question:q||'Décris cette image en détail.'})});
     const d=await r.json();rty();am('guideon',d.reply||'Impossible d\'analyser.');
-    if(typeof ve!=='undefined'&&ve&&typeof sp==='function')sp(d.reply||'');
+    
   }catch(e){rty();am('guideon','Erreur analyse.');}
   document.getElementById('imgurl').value='';document.getElementById('imgq').value='';
 }
