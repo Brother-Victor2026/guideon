@@ -305,7 +305,7 @@ app.post('/api/chat', async (req, res) => {
     res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
     res.end();
     // Extraire et sauvegarder memories en arriere-plan
-    if (reply && user && user.id) {
+    if (false && reply && user && user.id) { // EXTRACTION MEMORIES DESACTIVEE (economie quota Gemini free tier)
       try {
         const extractRes = await fetch('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', {
           method: 'POST',
