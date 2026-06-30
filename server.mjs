@@ -30,6 +30,21 @@ function checkToken(t) {
   } catch { return null; }
 }
 
+function getQuotaResetTime(displayTimeZone = 'Africa/Porto-Novo') {
+  const now = new Date();
+  const ptFormatter = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Los_Angeles', year: 'numeric', month: '2-digit', day: '2-digit' });
+  const ptParts = ptFormatter.formatToParts(now).reduce((acc, p) => { acc[p.type] = p.value; return acc; }, {});
+  const refDate = new Date(`${ptParts.year}-${ptParts.month}-${ptParts.day}T12:00:00Z`);
+  const ptHourAtNoonUTC = parseInt(new Intl.DateTimeFormat('en-US', { timeZone: 'America/Los_Angeles', hour: '2-digit', hour12: false }).format(refDate), 10);
+  const offsetHours = 12 - ptHourAtNoonUTC;
+  let resetUTC = new Date(Date.UTC(parseInt(ptParts.year), parseInt(ptParts.month) - 1, parseInt(ptParts.day), offsetHours, 0, 0));
+  if (resetUTC.getTime() <= now.getTime()) {
+    resetUTC = new Date(resetUTC.getTime() + 24 * 60 * 60 * 1000);
+  }
+  const displayFormatter = new Intl.DateTimeFormat('fr-FR', { timeZone: displayTimeZone, hour: '2-digit', minute: '2-digit' });
+  return { resetUTC, displayTime: displayFormatter.format(resetUTC) };
+}
+
 const MODELS = {
   'llama-70b': 'gemini-2.5-flash',
   'llama-8b': 'gemini-2.5-flash',
@@ -207,6 +222,15 @@ app.post('/api/chat', async (req, res) => {
     if (!response.ok) {
       const errData = await response.json();
       console.error("GEMINI ERROR:", JSON.stringify(errData));
+      const isQuotaExceeded = response.status === 429 || errData.error?.code === 429;
+      if (isQuotaExceeded) {
+        const { displayTime } = getQuotaResetTime();
+        return res.status(429).json({
+          quotaExceeded: true,
+          error: `Vous avez atteint la limite de votre conversation pour aujourd'hui. Revenez vers ${displayTime} pour une nouvelle conversation.`,
+          resetTime: displayTime
+        });
+      }
       return res.status(500).json({ error: errData.error?.message || JSON.stringify(errData) });
     }
 
