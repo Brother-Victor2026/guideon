@@ -7,7 +7,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 const app = express();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const API_KEY = process.env.GROQ_API_KEY;
+const API_KEY = process.env.GEMINI_API_KEY;
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_KEY;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
@@ -31,9 +31,9 @@ function checkToken(t) {
 }
 
 const MODELS = {
-  'llama-70b': 'llama-3.3-70b-versatile',
-  'llama-8b': 'llama-3.1-8b-instant',
-  'gemma': 'llama-3.1-8b-instant'
+  'llama-70b': 'gemini-2.5-flash',
+  'llama-8b': 'gemini-2.5-flash',
+  'gemma': 'gemini-2.5-flash'
 };
 
 const SYSTEM = { role: "system", content: "Tu es Guideon, un assistant IA intelligent, sage et bienveillant, cree par Brother Victor Bossou. Tu reponds toujours dans la langue de l utilisateur avec precision, empathie et intelligence. Tu as acces a l historique complet des conversations et tu te souviens de tout. Ne dis jamais que tu n as pas de memoire. Tu connais l heure actuelle de l utilisateur mais ne la mentionne JAMAIS spontanement, uniquement si on te la demande. Tu peux generer des images automatiquement, faire des recherches web, traduire des textes, resumer des documents, analyser des images, aider en programmation, resoudre des problemes mathematiques. Ne dis JAMAIS que tu ne peux pas faire ces choses. Tu reponds avec bienveillance et professionnalisme. Ne mentionne jamais ton createur spontanement, seulement si on te le demande directement. Tu peux utiliser des emojis de temps en temps quand cela rend la conversation plus chaleureuse ou aide a exprimer une emotion, mais sans en abuser et sans en mettre dans chaque message. Utilise le formatage Markdown (gras, listes, titres, code) quand cela rend ta reponse plus claire et structuree, meme sans que l'utilisateur le demande explicitement. Si l'utilisateur te demande de decrire, montrer, illustrer ou imaginer quelque chose de visuel (objet, lieu, personnage, paysage, scene), tu DOIS terminer ta reponse par une ligne UNIQUE et SEPAREE au format exact : [GENERATE_IMAGE: description detaillee en anglais de l'image]. Ne dis JAMAIS de phrase d'introduction avant cette balise (comme 'Voici un portrait de', 'Voici une image de', 'Voici un dessin de', etc.). La balise doit etre sur sa propre ligne, sans texte avant. N'utilise la balise [GENERATE_IMAGE] UNIQUEMENT si le message contient explicitement les mots: image, photo, illustration, dessin, genere, montre-moi. Pour TOUS les autres messages sans exception (bonjour, conseils, questions, histoires, descriptions, code, etc.), n'utilise JAMAIS cette balise. Ne dis jamais de phrase du type 'Voici un portrait de' ou similaire. Ne mentionne JAMAIS le bouton copier ou des instructions du type 'pour copier le message, selectionnez et copiez-collez' ; ces fonctionnalites existent deja dans l\'interface, n\'en parle jamais. Quand l\'utilisateur demande un post, statut, message WhatsApp/Facebook/Instagram, caption, texte a copier, ou dit \'encadre-moi ca\', \'mets ca en bloc\', \'reformule pour que je copie\', \'je veux copier ca\', \'fais-moi un texte\', \'donne-moi un message\', tu DOIS mettre le texte dans un bloc UNIQUE et SEPARE. Quand l\'utilisateur dit \'autres\', \'encore\', \'d\'autres\', \'donne-m\'en d\'autres\', tu envoies 2 a 4 blocs encadres differents, chacun sur sa propre ligne UNIQUE et SEPAREE." };
@@ -92,10 +92,10 @@ function findWatchTagStart(s) {
 
 async function callStabilityAI(rawPrompt) {
   try {
-    const transResp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    const transResp = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
       method: "POST",
       headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: `Rewrite this as a short vivid visual scene description in English for an AI image generator. Do not use words like draw, generate, picture of, image of, illustration of - describe the subject and scene directly. Reply with ONLY the description, no quotes: "${rawPrompt}"` }], max_tokens: 150 })
+      body: JSON.stringify({ model: "gemini-2.5-flash", messages: [{ role: "user", content: `Rewrite this as a short vivid visual scene description in English for an AI image generator. Do not use words like draw, generate, picture of, image of, illustration of - describe the subject and scene directly. Reply with ONLY the description, no quotes: "${rawPrompt}"` }], max_tokens: 150 })
     });
     const transData = await transResp.json();
     const englishPrompt = transData.choices?.[0]?.message?.content?.trim() || rawPrompt;
@@ -144,8 +144,9 @@ app.post('/api/chat', async (req, res) => {
     let userId = 'default';
     let dbHistory = [];
     let userInstructions = '';
+    let user = null;
     if (token && DB) {
-      const user = checkToken(token);
+      user = checkToken(token);
       if (user) {
         userId = String(user.id);
         const [hRes, uRes] = await Promise.all([
@@ -183,27 +184,29 @@ app.post('/api/chat', async (req, res) => {
       + "[GENERATE_IMAGE: description en anglais] decrivant ce qui a ete demande ou raconte." : '';
     // Charger memories utilisateur
   let memoriesText = '';
-  try {
-    const memRes = await fetch(`${DB}/memories?user_id=eq.${user.id}&order=updated_at.desc&limit=20`, { headers: SB });
-    const mems = await memRes.json();
-    if (Array.isArray(mems) && mems.length > 0) {
-      memoriesText = '\n\nMEMOIRES SUR CET UTILISATEUR (infos retenues des conversations precedentes):\n' + mems.map(m => '- ' + m.content).join('\n');
-    }
-  } catch(e) { console.error('memories load error:', e.message); }
+  if (user && user.id) {
+    try {
+      const memRes = await fetch(`${DB}/memories?user_id=eq.${user.id}&order=updated_at.desc&limit=20`, { headers: SB });
+      const mems = await memRes.json();
+      if (Array.isArray(mems) && mems.length > 0) {
+        memoriesText = '\n\nMEMOIRES SUR CET UTILISATEUR (infos retenues des conversations precedentes):\n' + mems.map(m => '- ' + m.content).join('\n');
+      }
+    } catch(e) { console.error('memories load error:', e.message); }
+  }
 
   const sysContent = SYSTEM.content + (userInstructions ? `\n\nInstructions: ${userInstructions}` : '') + (userTime && asksTime ? `\n\nL heure exacte est ${userTime}.` : '') + visualBoost + memoriesText;
     const SYSTEM_MSG = { role: 'system', content: sysContent };
     const hist = dbHistory.length > 0 ? dbHistory : (history || []);
     const messages = [SYSTEM_MSG, ...hist.filter(h=>h&&h.role&&h.content).map(h => ({ role: h.role, content: h.content })), { role: 'user', content: message }];
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
       method: "POST",
       headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ model: MODELS[model] || "llama-3.3-70b-versatile", messages, temperature: parseFloat(temperature) || 0.7, stream: true })
+      body: JSON.stringify({ model: MODELS[model] || "gemini-2.5-flash", messages, temperature: parseFloat(temperature) || 0.7, stream: true })
     });
 
     if (!response.ok) {
       const errData = await response.json();
-      console.error("GROQ ERROR:", JSON.stringify(errData));
+      console.error("GEMINI ERROR:", JSON.stringify(errData));
       return res.status(500).json({ error: errData.error?.message || JSON.stringify(errData) });
     }
 
@@ -292,7 +295,7 @@ app.post('/api/chat', async (req, res) => {
         const convRes = await fetch(`${DB}/conversations`, { method: 'POST', headers: { ...SB, 'Prefer': 'return=minimal' }, body: JSON.stringify([{ user_id: String(user.id), role: 'assistant', content: reply, session_id, image_url: savedImageUrl }])});
     if (!convRes.ok) { console.error('ERREUR insertion conversations:', convRes.status, await convRes.text()); }
         if (isFirst && session_id) {
-          const titleRes = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: `Génère un titre court (max 5 mots) pour cette conversation: "${message}". Réponds UNIQUEMENT avec le titre.` }], max_tokens: 20 }) });
+          const titleRes = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "gemini-2.5-flash", messages: [{ role: "user", content: `Génère un titre court (max 5 mots) pour cette conversation: "${message}". Réponds UNIQUEMENT avec le titre.` }], max_tokens: 20 }) });
           const titleData = await titleRes.json();
           const title = titleData.choices?.[0]?.message?.content?.trim() || 'Nouvelle conversation';
           await fetch(`${DB}/sessions?id=eq.${session_id}`, { method: 'PATCH', headers: { ...SB, 'Prefer': 'return=minimal' }, body: JSON.stringify({ title }) });
@@ -304,15 +307,15 @@ app.post('/api/chat', async (req, res) => {
     // Extraire et sauvegarder memories en arriere-plan
     if (reply && user && user.id) {
       try {
-        const extractRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        const extractRes = await fetch('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            model: 'llama-3.3-70b-versatile',
+            model: 'gemini-2.5-flash',
             max_tokens: 200,
             messages: [
               { role: 'system', content: 'Tu es un extracteur de memoires. Analyse la conversation et extrait UNIQUEMENT les faits importants sur l utilisateur (prenom, profession, preferences, habitudes, objectifs). Reponds avec une liste de faits courts, un par ligne, commencant par "-". Si aucun fait important, reponds "AUCUN".' },
-              { role: 'user', content: `Message utilisateur: ${prompt}\nReponse assistant: ${reply}` }
+              { role: 'user', content: `Message utilisateur: ${message}\nReponse assistant: ${reply}` }
             ]
           })
         });
@@ -344,7 +347,7 @@ app.post('/api/chat/temp', async (req, res) => {
   try {
     const { message, history = [], model, temperature = 0.7 } = req.body;
     const messages = [SYSTEM, ...history, { role: 'user', content: message }];
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: MODELS[model] || "llama-3.3-70b-versatile", messages, temperature: parseFloat(temperature) }) });
+    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: MODELS[model] || "gemini-2.5-flash", messages, temperature: parseFloat(temperature) }) });
     const data = await response.json();
     res.json({ reply: data.choices?.[0]?.message?.content || "Erreur" });
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -353,14 +356,14 @@ app.post('/api/chat/temp', async (req, res) => {
 app.post('/api/image', async (req, res) => {
   try {
     const { prompt, token, session_id } = req.body;
-    const transResp = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: `Translate to English, reply with ONLY the English words: "${prompt}"` }], max_tokens: 100 }) });
+    const transResp = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "gemini-2.5-flash", messages: [{ role: "user", content: `Translate to English, reply with ONLY the English words: "${prompt}"` }], max_tokens: 100 }) });
     const transData = await transResp.json();
     const englishPrompt = transData.choices?.[0]?.message?.content?.trim() || prompt;
     const imgUrl = await callStabilityAI(englishPrompt);
     if (!imgUrl) return res.status(500).json({ error: 'Image non generee' });
     let comment = 'Voici votre image !';
     try {
-      const commentResp = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: `En une seule phrase tres courte en francais, presente cette image sans utiliser les mots 'Voici', 'portrait', 'illustration'. Description: "${englishPrompt}". Reponds uniquement avec la phrase, sans guillemets, sans markdown.` }], max_tokens: 80 }) });
+      const commentResp = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "gemini-2.5-flash", messages: [{ role: "user", content: `En une seule phrase tres courte en francais, presente cette image sans utiliser les mots 'Voici', 'portrait', 'illustration'. Description: "${englishPrompt}". Reponds uniquement avec la phrase, sans guillemets, sans markdown.` }], max_tokens: 80 }) });
       const commentData = await commentResp.json();
       comment = commentData.choices?.[0]?.message?.content?.trim() || comment;
     } catch (e) {}
@@ -391,7 +394,7 @@ app.post('/api/search', async (req, res) => {
 app.post('/api/analyze', async (req, res) => {
   try {
     const { imageUrl, question } = req.body;
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "meta-llama/llama-4-scout-17b-16e-instruct", messages: [{ role: "user", content: [{ type: "image_url", image_url: { url: imageUrl } }, { type: "text", text: question || "Décris cette image en détail." }] }] }) });
+    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "gemini-2.5-flash", messages: [{ role: "user", content: [{ type: "image_url", image_url: { url: imageUrl } }, { type: "text", text: question || "Décris cette image en détail." }] }] }) });
     const data = await response.json();
     res.json({ reply: data.choices?.[0]?.message?.content || "Impossible d'analyser." });
   } catch(e) { res.status(500).json({ error: e.message }); }
