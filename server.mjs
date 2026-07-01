@@ -213,11 +213,18 @@ app.post('/api/chat', async (req, res) => {
     const SYSTEM_MSG = { role: 'system', content: sysContent };
     const hist = dbHistory.length > 0 ? dbHistory : (history || []);
     const messages = [SYSTEM_MSG, ...hist.filter(h=>h&&h.role&&h.content).map(h => ({ role: h.role, content: h.content })), { role: 'user', content: message }];
-    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
-      method: "POST",
-      headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ model: MODELS[model] || "gemini-2.5-flash-lite", messages, temperature: parseFloat(temperature) || 0.7, stream: true })
-    });
+    const geminiBody = JSON.stringify({ model: MODELS[model] || "gemini-2.5-flash-lite", messages, temperature: parseFloat(temperature) || 0.7, stream: true });
+    let response;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      if (attempt > 0) await new Promise(r => setTimeout(r, 2000));
+      response = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" },
+        body: geminiBody
+      });
+      if (response.ok || response.status !== 503) break;
+      console.error(`GEMINI 503 (tentative ${attempt + 1}/2) - retry dans 2s...`);
+    }
 
     if (!response.ok) {
       const errData = await response.json();
@@ -230,6 +237,10 @@ app.post('/api/chat', async (req, res) => {
           error: `Vous avez atteint la limite de votre conversation pour aujourd'hui. Revenez vers ${displayTime} pour une nouvelle conversation.`,
           resetTime: displayTime
         });
+      }
+      const isOverloaded = response.status === 503;
+      if (isOverloaded) {
+        return res.status(503).json({ overloaded: true, error: "Guidéon est momentanément surchargé. Réessayez dans quelques secondes." });
       }
       return res.status(500).json({ error: errData.error?.message || JSON.stringify(errData) });
     }
