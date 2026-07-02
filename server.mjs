@@ -610,10 +610,9 @@ app.get('/api/stats', async (req, res) => {
     const auth = req.headers.authorization;
     if (!auth) return res.status(401).json({ error: 'Non autorise' });
     const tok = auth.replace('Bearer ', '');
-    const uRes = await fetch(`${DB}/sessions?token=eq.${encodeURIComponent(tok)}`, { headers: SB });
-    const uData = await uRes.json();
-    if (!Array.isArray(uData) || !uData[0]) return res.status(401).json({ error: 'Token invalide' });
-    const userId = uData[0].user_id;
+    const user = checkToken(tok);
+    if (!user) return res.status(401).json({ error: 'Token invalide' });
+    const userId = String(user.id);
     const [convRes, msgRes, memRes] = await Promise.all([
       fetch(`${DB}/conversations?user_id=eq.${userId}&select=id`, { headers: SB }),
       fetch(`${DB}/conversations?user_id=eq.${userId}&select=id,messages`, { headers: SB }),
