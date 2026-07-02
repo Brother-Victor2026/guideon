@@ -614,7 +614,7 @@ app.get('/api/stats', async (req, res) => {
     if (!user) return res.status(401).json({ error: 'Token invalide' });
     const userId = String(user.id);
     const [convRes, msgRes, memRes] = await Promise.all([
-      fetch(`${DB}/conversations?user_id=eq.${userId}&select=id`, { headers: SB }),
+      fetch(`${DB}/sessions?user_id=eq.${userId}&select=id`, { headers: SB }),
       fetch(`${DB}/conversations?user_id=eq.${userId}&select=id`, { headers: SB }),
       fetch(`${DB}/memories?user_id=eq.${userId}&select=id`, { headers: SB })
     ]);
