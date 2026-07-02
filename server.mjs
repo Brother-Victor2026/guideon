@@ -615,14 +615,13 @@ app.get('/api/stats', async (req, res) => {
     const userId = String(user.id);
     const [convRes, msgRes, memRes] = await Promise.all([
       fetch(`${DB}/conversations?user_id=eq.${userId}&select=id`, { headers: SB }),
-      fetch(`${DB}/conversations?user_id=eq.${userId}&select=id,messages`, { headers: SB }),
+      fetch(`${DB}/conversations?user_id=eq.${userId}&select=id`, { headers: SB }),
       fetch(`${DB}/memories?user_id=eq.${userId}&select=id`, { headers: SB })
     ]);
     const convs = await convRes.json();
     const msgs = await msgRes.json();
     const mems = await memRes.json();
-    const totalMessages = Array.isArray(msgs) ? msgs.reduce((acc, c) => acc + (Array.isArray(c.messages) ? c.messages.length : 0), 0) : 0;
-    res.json({ conversations: Array.isArray(convs) ? convs.length : 0, messages: totalMessages, memories: Array.isArray(mems) ? mems.length : 0 });
+    res.json({ conversations: Array.isArray(convs) ? convs.length : 0, messages: Array.isArray(msgs) ? msgs.length : 0, memories: Array.isArray(mems) ? mems.length : 0 });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
