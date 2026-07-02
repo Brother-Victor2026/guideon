@@ -326,6 +326,7 @@ app.post('/api/chat', async (req, res) => {
       const user = checkToken(token);
       if (user) {
         const isFirst = dbHistory.length === 0;
+        console.error('DEBUG TITRE - isFirst:', isFirst, '| dbHistory.length:', dbHistory.length, '| session_id:', session_id);
         await fetch(`${DB}/conversations`, { method: 'POST', headers: { ...SB, 'Prefer': 'return=minimal' }, body: JSON.stringify([{ user_id: String(user.id), role: 'user', content: message, session_id, image_url: null }])});
         const convRes = await fetch(`${DB}/conversations`, { method: 'POST', headers: { ...SB, 'Prefer': 'return=minimal' }, body: JSON.stringify([{ user_id: String(user.id), role: 'assistant', content: reply, session_id, image_url: savedImageUrl }])});
     if (!convRes.ok) { console.error('ERREUR insertion conversations:', convRes.status, await convRes.text()); }
@@ -333,6 +334,8 @@ app.post('/api/chat', async (req, res) => {
           const titleRes = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "openai/gpt-oss-20b", messages: [{ role: "user", content: `Génère un titre court (max 5 mots) pour cette conversation: "${message}". Réponds UNIQUEMENT avec le titre.` }], max_tokens: 150 }) });
           const titleData = await titleRes.json();
           const title = titleData.choices?.[0]?.message?.content?.trim() || 'Nouvelle conversation';
+          console.error('DEBUG TITRE - titleData brut:', JSON.stringify(titleData));
+          console.error('DEBUG TITRE - title final:', title);
           await fetch(`${DB}/sessions?id=eq.${session_id}`, { method: 'PATCH', headers: { ...SB, 'Prefer': 'return=minimal' }, body: JSON.stringify({ title }) });
         }
       }
