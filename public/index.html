@@ -348,7 +348,7 @@ function renderSessionRow(s){
       const div=document.createElement('div');
       div.style.cssText='padding:8px;border-radius:8px;margin-bottom:4px;background:'+(curSession===s.id?'#2d1b69':'transparent')+';border:1px solid #1f1f3a;';
       const title=(s.title||'Nouvelle conversation').replace(/</g,'&lt;').replace(/'/g,'&#39;');
-      div.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:4px;"><span onclick="switchSession('+s.id+')" style="color:#e2e8f0;font-size:12px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;">'+(s.pinned?'📌':'💬')+' '+title+'</span><div style="display:flex;gap:2px;flex-shrink:0;"><button onclick="pinSession('+s.id+','+!s.pinned+')" style="background:none;border:none;color:'+(s.pinned?'#fbbf24':'#6b7280')+';cursor:pointer;font-size:12px;padding:0 2px;">📌</button><button onclick="renameSession('+s.id+',\''+title+'\')" style="background:none;border:none;color:#a78bfa;cursor:pointer;font-size:12px;padding:0 2px;">✏️</button><button onclick="exportSess('+s.id+')" style="background:none;border:none;color:#60a5fa;cursor:pointer;font-size:12px;padding:0 2px;">⬇️</button><button onclick="shareSess('+s.id+')" style="background:none;border:none;color:#34d399;cursor:pointer;font-size:12px;padding:0 2px;">🔗</button><button onclick="deleteSession('+s.id+')" style="background:none;border:none;color:#f87171;cursor:pointer;font-size:12px;padding:0 2px;">🗑</button></div></div><div style="font-size:10px;color:#6b7280;margin-top:2px;padding-left:4px;">'+relDate(s.created_at)+'</div>';
+      div.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:4px;"><span onclick="switchSession('+s.id+')" style="color:#e2e8f0;font-size:12px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;">'+title+'</span><button onclick="showSessionMenu('+s.id+','+s.pinned+',this)" style="background:none;border:none;color:#6b7280;cursor:pointer;font-size:18px;padding:0 6px;line-height:1;">⋯</button></div><div style="font-size:10px;color:#6b7280;margin-top:2px;padding-left:4px;">'+relDate(s.created_at)+'</div>';
       list.appendChild(div);
     }
     var favSessions=sessions.filter(function(s){return s.pinned;});
@@ -367,6 +367,47 @@ function renderSessionRow(s){
     recentSessions.forEach(renderSessionRow);
   applyTheme(localStorage.getItem("gtheme"));
   }catch(e){}
+}
+
+function showSessionMenu(id,pinned,btn){
+  var was=document.getElementById('sm_'+id);
+  document.querySelectorAll('[id^="sm_"]').forEach(function(el){el.remove();});
+  if(was)return;
+  var titleEl=btn.parentElement.querySelector('span');
+  var t=titleEl?titleEl.textContent:'';
+  var m=document.createElement('div');
+  m.id='sm_'+id;
+  m.style.cssText='position:fixed;z-index:9999;background:#1a1a2e;border:1px solid #2d2d4e;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.6);min-width:190px;overflow:hidden;';
+  var rect=btn.getBoundingClientRect();
+  m.style.top=(rect.bottom+6)+'px';
+  m.style.right=(window.innerWidth-rect.right+8)+'px';
+  function mk(icon,label,col,fn){
+    var d=document.createElement('div');
+    d.style.cssText='display:flex;align-items:center;gap:12px;padding:13px 16px;cursor:pointer;color:'+(col||'#e2e8f0')+';font-size:14px;';
+    d.innerHTML='<span style="font-size:16px;">'+icon+'</span><span>'+label+'</span>';
+    d.onmouseover=function(){d.style.background='#2a2a3e';};
+    d.onmouseout=function(){d.style.background='';};
+    d.onclick=function(e){
+      e.stopPropagation();m.remove();
+      document.removeEventListener('click',closeMenu);fn();
+    };
+    return d;
+  }
+  m.appendChild(mk('↗','Partager',null,function(){shareSess(id);}));
+  m.appendChild(mk('✏','Renommer',null,function(){renameSession(id,t);}));
+  m.appendChild(mk(
+    pinned?'⭐':'☆',
+    pinned?'Retirer des favoris':'Ajouter aux favoris',
+    null,function(){pinSession(id,!pinned).then(function(){loadSessions();});}));
+  var sep=document.createElement('div');
+  sep.style.cssText='height:1px;background:#2d2d4e;margin:0;';
+  m.appendChild(sep);
+  m.appendChild(mk('🗑','Supprimer','#f87171',function(){deleteSession(id);}));
+  document.body.appendChild(m);
+  function closeMenu(e){
+    if(!m.contains(e.target)){m.remove();document.removeEventListener('click',closeMenu);}
+  }
+  setTimeout(function(){document.addEventListener('click',closeMenu);},10);
 }
 
 async function searchHist(q){
