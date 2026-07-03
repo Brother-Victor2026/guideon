@@ -344,27 +344,13 @@ async function loadSessions(){
     const list=document.getElementById('sesslist');list.innerHTML='';
     if(!Array.isArray(sessions))return;
     function relDate(d){if(!d)return'';const dt=new Date(d);const now=new Date();const diffH=(now-dt)/3600000;if(diffH<1)return'À l\'instant';if(diffH<24&&dt.getDate()===now.getDate())return Math.floor(diffH)+'h';const y=new Date(now);y.setDate(y.getDate()-1);if(dt.toDateString()===y.toDateString())return'Hier';const y2=new Date(now);y2.setDate(y2.getDate()-2);if(dt.toDateString()===y2.toDateString())return'Avant-hier';const diffD=Math.floor((now-dt)/86400000);if(diffD<7)return'Il y a '+diffD+' jours';return dt.toLocaleDateString('fr-FR')}
-function renderRow(s){
+sessions.forEach(s=>{
       const div=document.createElement('div');
       div.style.cssText='padding:8px;border-radius:8px;margin-bottom:4px;background:'+(curSession===s.id?'#2d1b69':'transparent')+';border:1px solid #1f1f3a;';
       const title=(s.title||'Nouvelle conversation').replace(/</g,'&lt;').replace(/'/g,'&#39;');
       div.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:4px;"><span onclick="switchSession('+s.id+')" style="color:#e2e8f0;font-size:12px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;">'+(s.pinned?'📌':'💬')+' '+title+'</span><div style="display:flex;gap:2px;flex-shrink:0;"><button onclick="pinSession('+s.id+','+!s.pinned+')" style="background:none;border:none;color:'+(s.pinned?'#fbbf24':'#6b7280')+';cursor:pointer;font-size:12px;padding:0 2px;">📌</button><button onclick="renameSession('+s.id+',\''+title+'\')" style="background:none;border:none;color:#a78bfa;cursor:pointer;font-size:12px;padding:0 2px;">✏️</button><button onclick="exportSess('+s.id+')" style="background:none;border:none;color:#60a5fa;cursor:pointer;font-size:12px;padding:0 2px;">⬇️</button><button onclick="shareSess('+s.id+')" style="background:none;border:none;color:#34d399;cursor:pointer;font-size:12px;padding:0 2px;">🔗</button><button onclick="deleteSession('+s.id+')" style="background:none;border:none;color:#f87171;cursor:pointer;font-size:12px;padding:0 2px;">🗑</button></div></div><div style="font-size:10px;color:#6b7280;margin-top:2px;padding-left:4px;">'+relDate(s.created_at)+'</div>';
       list.appendChild(div);
-    }
-    var favs=sessions.filter(function(s){return s.pinned;});
-    var recents=sessions.filter(function(s){return !s.pinned;});
-    if(favs.length>0){
-      var fh=document.createElement('div');
-      fh.textContent='⭐ Favoris';
-      fh.style.cssText='font-size:11px;color:#fbbf24;font-weight:bold;margin:8px 0 4px 4px;text-transform:uppercase;';
-      list.appendChild(fh);
-      favs.forEach(renderRow);
-    }
-    var rh=document.createElement('div');
-    rh.textContent='Récentes';
-    rh.style.cssText='font-size:11px;color:#6b7280;font-weight:bold;margin:8px 0 4px 4px;text-transform:uppercase;';
-    list.appendChild(rh);
-    recents.forEach(renderRow);
+    });
   applyTheme(localStorage.getItem("gtheme"));
   }catch(e){}
 }
