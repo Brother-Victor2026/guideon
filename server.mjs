@@ -209,7 +209,32 @@ app.post('/api/chat', async (req, res) => {
     } catch(e) { console.error('memories load error:', e.message); }
   }
 
-  const sysContent = SYSTEM.content + (userInstructions ? `\n\nInstructions: ${userInstructions}` : '') + (userTime && asksTime ? `\n\nL heure exacte est ${userTime}.` : '') + visualBoost + memoriesText;
+  // Recherche web Tavily
+  let tavilyContext = '';
+  const TAVILY_KEY = process.env.TAVILY_API_KEY;
+  if (TAVILY_KEY && message) {
+    const needsSearch = /aujourd|actuel|maintenant|score|météo|meteo|prix|résultat|resultat|match|news|nouvelle|récent|recent|2025|2026|qui est|c'est quoi/i.test(message);
+    if (needsSearch) {
+      try {
+        const tavRes = await fetch('https://api.tavily.com/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            api_key: TAVILY_KEY,
+            query: message,
+            max_results: 5,
+            search_depth: 'basic'
+          })
+        });
+        const tavData = await tavRes.json();
+        if (tavData.results && tavData.results.length > 0) {
+          tavilyContext = '\n\nÉLéMENTS TROUVÉS SUR LE WEB (utilise-les pour répondre avec précision) :\n'
+            + tavData.results.map((r,i) => `[${i+1}] ${r.title}\n${r.content}\nSource: ${r.url}`).join('\n\n');
+        }
+      } catch(e) { console.error('Tavily error:', e.message); }
+    }
+  }
+  const sysContent = SYSTEM.content + (userInstructions ? `\n\nInstructions: ${userInstructions}` : '') + (userTime && asksTime ? `\n\nL heure exacte est ${userTime}.` : '') + visualBoost + memoriesText + tavilyContext;
     const SYSTEM_MSG = { role: 'system', content: sysContent };
     const hist = dbHistory.length > 0 ? dbHistory : (history || []);
     const messages = [SYSTEM_MSG, ...hist.filter(h=>h&&h.role&&h.content).map(h => ({ role: h.role, content: h.content })), { role: 'user', content: message }];
