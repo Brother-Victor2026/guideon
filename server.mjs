@@ -83,7 +83,7 @@ app.post('/api/login', async (req, res) => {
 
 const IMG_TAG_START = '[GENERATE_IMAGE';
 const COPY_PHRASE_START = '(Pour copier';
-const WATCH_TAGS = [IMG_TAG_START, COPY_PHRASE_START];
+const WATCH_TAGS = [IMG_TAG_START];
 
 function partialTagSuffixLength(s) {
   let best = 0;
@@ -293,11 +293,6 @@ app.post('/api/chat', async (req, res) => {
             }
             if (imageDone) pending = pending.replace(/\[GENERATE_IMAGE:\s*[\s\S]+?\]/g, '');
 
-            while (copyMatch) {
-              const before = pending.slice(0, copyMatch.index);
-              if (before) res.write(`data: ${JSON.stringify({ content: before })}\n\n`);
-              pending = pending.slice(copyMatch.index + copyMatch[0].length);
-
             }
             const startIdx = findWatchTagStart(pending);
             if (startIdx !== -1) {
@@ -311,7 +306,6 @@ app.post('/api/chat', async (req, res) => {
                 res.write(`data: ${JSON.stringify({ content: toSend })}\n\n`);
                 pending = pending.slice(pending.length - holdLen);
               }
-            }
           }
         } catch (e) {}
       }
