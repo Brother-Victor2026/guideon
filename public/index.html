@@ -807,7 +807,7 @@ function addCopyButtons(el){
       const cbtn=document.createElement('button');
       cbtn.textContent='Copier';
       cbtn.style.cssText='position:absolute;right:8px;top:8px;background:none;border:1px solid #a78bfa;color:#a78bfa;border-radius:6px;padding:2px 8px;font-size:12px;cursor:pointer;';
-        cbtn.onclick=function(){const block=cbtn.parentElement;const div=block?block.querySelector('div'):null;const t=div?div.textContent:el.innerText||'';const ta=document.createElement('textarea');ta.value=t;ta.style.cssText='position:fixed;top:-9999px;left:-9999px;opacity:0;';document.body.appendChild(ta);ta.focus();ta.select();try{document.execCommand('copy');cbtn.textContent='✅';setTimeout(()=>{cbtn.textContent='Copier';},2000);}catch(e){}document.body.removeChild(ta);if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).catch(()=>{});};
+        cbtn.onclick=function(){const block=cbtn.parentElement;const div=block?block.querySelector('div'):null;const t=div?div.textContent:el.innerText||'';const ta=document.createElement('textarea');ta.value=t;ta.style.cssText='position:fixed;top:-9999px;left:-9999px;opacity:0;';document.body.appendChild(ta);ta.focus();ta.select();try{document.execCommand('copy');cbtn.textContent='✅';setTimeout(()=>{cbtn.textContent='Copier';},2000);}catch(e){}document.body.removeChild(ta);if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(()=>{cBtn.textContent='✓ Copié';setTimeout(function(){cBtn.textContent='Copier'},2000);}).catch(()=>{});};
       cb.appendChild(cbtn);
       const pre=document.createElement('div');pre.textContent=postText;cb.appendChild(pre);
       el.appendChild(cb);
