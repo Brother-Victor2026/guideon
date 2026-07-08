@@ -3,6 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
 import { Resend } from 'resend';
+import multer from 'multer';
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const app = express();
