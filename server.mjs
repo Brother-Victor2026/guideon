@@ -631,6 +631,33 @@ app.post('/api/feedback', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+
+app.post('/api/upload', multer({storage: multer.memoryStorage()}).single('pdf'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({error: 'Aucun fichier'});
+    if (req.file.mimetype !== 'application/pdf') return res.status(400).json({error: 'Doit être un PDF'});
+    
+    const bucketName = 'pdfs';
+    const fileName = `${Date.now()}-${req.file.originalname}`;
+    
+    try {
+      await sb.storage.createBucket(bucketName, {public: false});
+    } catch(e) {
+      if (!e.message.includes('already exists')) throw e;
+    }
+    
+    const {data, error} = await sb.storage.from(bucketName).upload(fileName, req.file.buffer, {contentType: 'application/pdf'});
+    
+    if (error) return res.status(500).json({error: error.message});
+    
+    const {data: {publicUrl}} = sb.storage.from(bucketName).getPublicUrl(fileName);
+    
+    res.json({success: true, url: publicUrl, fileName: req.file.originalname});
+  } catch(e) {
+    console.error('Upload error:', e);
+    res.status(500).json({error: e.message});
+  }
+});
 app.listen(process.env.PORT || 3000, () => console.log("Guideon actif !"));
 
 app.post('/api/forgot-password', async (req, res) => {
