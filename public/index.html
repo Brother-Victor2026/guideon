@@ -59,6 +59,7 @@ header{background:linear-gradient(135deg,#1a0533,#0d1f4d);padding:14px 16px;disp
 </style>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js">
 document.getElementById('pdfUploadInput').addEventListener('change', async (e) => {
+  alert('PDF file selected: ' + (e.target.files[0]?.name || 'unknown'));
   const file = e.target.files[0];
   if (!file) return;
   const formData = new FormData();
