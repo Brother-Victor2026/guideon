@@ -6,7 +6,6 @@ import { Resend } from 'resend';
 import multer from 'multer';
 import { createClient } from '@supabase/supabase-js';
 const resend = new Resend(process.env.RESEND_API_KEY);
-const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const app = express();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -15,6 +14,8 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_KEY;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 const SECRET = process.env.JWT_SECRET || 'guideon2026';
+
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const DB = SUPABASE_URL ? `${SUPABASE_URL}/rest/v1` : null;
 const SB = { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json' };
