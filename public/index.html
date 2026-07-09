@@ -58,6 +58,7 @@ header{background:linear-gradient(135deg,#1a0533,#0d1f4d);padding:14px 16px;disp
 @keyframes typing-blink{0%,80%,100%{opacity:0.3;}40%{opacity:1;}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js">
+document.addEventListener('DOMContentLoaded', () => {
 document.getElementById('pdfUploadInput').addEventListener('change', async (e) => {
   alert('PDF file selected: ' + (e.target.files[0]?.name || 'unknown'));
   const file = e.target.files[0];
@@ -76,6 +77,7 @@ document.getElementById('pdfUploadInput').addEventListener('change', async (e) =
   } catch(err) {
     alert(`Upload échoué: ${err.message}`);
   }
+});
 });
 
 </script>
