@@ -6,6 +6,7 @@ import { Resend } from 'resend';
 import multer from 'multer';
 import { createClient } from '@supabase/supabase-js';
 const resend = new Resend(process.env.RESEND_API_KEY);
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const app = express();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
