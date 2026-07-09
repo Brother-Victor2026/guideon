@@ -859,5 +859,24 @@ function addCopyButtons(el){
   });
 }
 </script>
+document.getElementById('pdfUploadInput').addEventListener('change', async (e) => {
+  alert('PDF file selected: ' + (e.target.files[0]?.name || 'unknown'));
+  const file = e.target.files[0];
+  if (!file) return;
+  const formData = new FormData();
+  formData.append('pdf', file);
+  try {
+    const response = await fetch('/api/upload', {method: 'POST', body: formData});
+    const data = await response.json();
+    if (data.success) {
+      alert('PDF upload: ${data.fileName}');
+      document.getElementById('ui').value = 'Fichier PDF: ${data.url}';
+    } else {
+      alert('Error: ${data.error}');
+    }
+  } catch(err) {
+    alert('Upload échoué: ${err.message}');
+  }
+});
 </body>
 </html>
