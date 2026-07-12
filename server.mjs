@@ -1,12 +1,9 @@
-import dotenv from 'dotenv';
-dotenv.config();
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
 import { Resend } from 'resend';
 import multer from 'multer';
-import { createClient } from '@supabase/supabase-js';
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const app = express();
@@ -16,8 +13,6 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_KEY;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 const SECRET = process.env.JWT_SECRET || 'guideon2026';
-
-const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const DB = SUPABASE_URL ? `${SUPABASE_URL}/rest/v1` : null;
 const SB = { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json' };
@@ -642,40 +637,29 @@ app.post('/api/upload', multer({storage: multer.memoryStorage()}).single('pdf'),
   try {
     if (!req.file) return res.status(400).json({error: 'Aucun fichier'});
     if (req.file.mimetype !== 'application/pdf') return res.status(400).json({error: 'Doit être un PDF'});
-
+    
     const bucketName = 'pdfs';
-    const filename = `${Date.now()}-${req.file.originalname}`;
-
+    const fileName = `${Date.now()}-${req.file.originalname}`;
+    
     try {
-      console.log('Tentative de créer le bucket:', bucketName);
       await sb.storage.createBucket(bucketName, {public: false});
-      console.log('Bucket créé avec succès');
     } catch(e) {
-      console.log('Erreur bucket:', e.message);
       if (!e.message.includes('already exists')) throw e;
     }
     
-    // Attendre que Supabase propage le bucket
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    console.log('===DEBUG UPLOAD===', bucketName, filename);
-    const { data, error } = await sb.storage.from(bucketName).upload(filename, req.file.buffer, {contentType: 'application/pdf'});
+    const {data, error} = await sb.storage.from(bucketName).upload(fileName, req.file.buffer, {contentType: 'application/pdf'});
     
-    if (error) {
-      console.log('Upload error:', error.message);
-      return res.status(500).json({error: error.message});
-    }
+    if (error) return res.status(500).json({error: error.message});
     
-    console.log('Upload successful');
-    const publicUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/${bucketName}/${filename}`;
-    console.log('DEBUG URL:', publicUrl, 'filename:', filename, 'SUPABASE_URL:', process.env.SUPABASE_URL);
+    const {data: {publicUrl}} = sb.storage.from(bucketName).getPublicUrl(fileName);
     
-    res.json({success: true, url: publicUrl.publicUrl, filename: req.file.originalname});
+    res.json({success: true, url: publicUrl, fileName: req.file.originalname});
   } catch(e) {
     console.error('Upload error:', e);
     res.status(500).json({error: e.message});
   }
 });
+app.listen(process.env.PORT || 3000, () => console.log("Guideon actif !"));
 
 app.post('/api/forgot-password', async (req, res) => {
   try {
@@ -748,6 +732,3 @@ app.post('/api/reset-password', async (req, res) => {
     res.json({ message: 'Mot de passe mis à jour' });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
-
-app.listen(process.env.PORT || 3000, () => console.log('Guideon actif !'));
-
