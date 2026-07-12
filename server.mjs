@@ -667,7 +667,8 @@ app.post('/api/upload', multer({storage: multer.memoryStorage()}).single('pdf'),
     }
     
     console.log('Upload successful');
-    const { data: publicUrl } = sb.storage.from(bucketName).getPublicUrl(filename);
+    const publicUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/${bucketName}/${filename}`;
+    console.log('DEBUG URL:', publicUrl, 'filename:', filename, 'SUPABASE_URL:', process.env.SUPABASE_URL);
     
     res.json({success: true, url: publicUrl.publicUrl, filename: req.file.originalname});
   } catch(e) {
