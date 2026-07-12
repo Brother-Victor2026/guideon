@@ -70,7 +70,7 @@ document.getElementById('pdfUploadInput').addEventListener('change', async (e) =
     const response = await fetch('/api/upload', {method: 'POST', body: formData});
     const data = await response.json();
     if (data.success) {
-      alert(`PDF uploadé: ${data.fileName}`);
+            alert(`PDF uploadé: ${data.url}`);
       document.getElementById('ui').value = `Fichier PDF: ${data.fileName}\nURL: ${data.url}`;
     } else {
       alert(`Erreur: ${data.error}`);
