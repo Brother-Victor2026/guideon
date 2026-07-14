@@ -1,3 +1,6 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import path from 'path';
 import { createClient } from '@supabase/supabase-js';
@@ -5,7 +8,7 @@ import { fileURLToPath } from 'url';
 import crypto from 'crypto';
 import { Resend } from 'resend';
 import multer from 'multer';
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = null; // Resend désactivé pour tests
 
 const app = express();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -661,7 +664,6 @@ app.post('/api/upload', multer({storage: multer.memoryStorage()}).single('pdf'),
     res.status(500).json({error: e.message});
   }
 });
-app.listen(process.env.PORT || 3000, () => console.log("Guideon actif !"));
 
 app.post('/api/forgot-password', async (req, res) => {
   try {
@@ -734,3 +736,4 @@ app.post('/api/reset-password', async (req, res) => {
     res.json({ message: 'Mot de passe mis à jour' });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
+app.listen(process.env.PORT || 3000, () => console.log("Guideon actif !"));
