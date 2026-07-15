@@ -14,12 +14,11 @@ const app = express();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const API_KEY = process.env.GROQ_API_KEY;
 const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_KEY;
+const DB = SUPABASE_URL ? `${SUPABASE_URL}/rest/v1` : null;
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 const SECRET = process.env.JWT_SECRET || 'guideon2026';
 
-const DB = SUPABASE_URL ? `${SUPABASE_URL}/rest/v1` : null;
 const SB = { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json' };
 
 function hashPwd(p) { return crypto.createHash('sha256').update(p + SECRET).digest('hex'); }
