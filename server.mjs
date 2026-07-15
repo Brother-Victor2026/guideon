@@ -736,4 +736,4 @@ app.post('/api/reset-password', async (req, res) => {
     res.json({ message: 'Mot de passe mis à jour' });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
-app.listen(process.env.PORT || 3000, () => console.log("Guideon actif !"));
+app.listen(8080, () => console.log("Guideon actif !"));
